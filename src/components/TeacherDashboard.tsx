@@ -1,17 +1,33 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, Code, Clock, RefreshCw, Eye, TrendingUp } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Users, Code, Clock, RefreshCw, Eye, TrendingUp, BarChart3, Globe } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+
+const chartConfig = {
+  submissions: {
+    label: "Submissions",
+    color: "hsl(var(--chart-1))",
+  },
+  students: {
+    label: "Students",
+    color: "hsl(var(--chart-2))",
+  },
+};
 
 const TeacherDashboard = () => {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [websiteUrl, setWebsiteUrl] = useState('');
 
   useEffect(() => {
+    // Get current website URL for sharing
+    setWebsiteUrl(window.location.origin);
+
     const loadSubmissions = () => {
       const data = JSON.parse(localStorage.getItem('studentSubmissions') || '[]');
       setSubmissions(data.sort((a: any, b: any) => 
@@ -20,7 +36,7 @@ const TeacherDashboard = () => {
     };
 
     loadSubmissions();
-    const interval = setInterval(loadSubmissions, 2000); // Refresh every 2 seconds
+    const interval = setInterval(loadSubmissions, 2000);
 
     return () => clearInterval(interval);
   }, []);
@@ -41,8 +57,56 @@ const TeacherDashboard = () => {
   const totalSubmissions = submissions.length;
   const avgSubmissionsPerStudent = totalStudents > 0 ? Math.round(totalSubmissions / totalStudents) : 0;
 
+  // Chart data preparation
+  const hourlyData = submissions.reduce((acc: any, submission: any) => {
+    const hour = new Date(submission.timestamp).getHours();
+    const existing = acc.find((item: any) => item.hour === hour);
+    if (existing) {
+      existing.submissions += 1;
+    } else {
+      acc.push({ hour: `${hour}:00`, submissions: 1 });
+    }
+    return acc;
+  }, []).sort((a: any, b: any) => parseInt(a.hour) - parseInt(b.hour));
+
+  const studentActivityData = uniqueStudents.map(student => ({
+    name: student.studentName,
+    submissions: student.submissionCount
+  }));
+
+  const pieData = [
+    { name: 'Active Students', value: totalStudents, color: '#3b82f6' },
+    { name: 'Total Submissions', value: totalSubmissions, color: '#10b981' },
+  ];
+
+  const copyWebsiteUrl = () => {
+    navigator.clipboard.writeText(websiteUrl);
+    // You can add a toast notification here
+  };
+
   return (
     <div className="space-y-8">
+      {/* Website URL Sharing */}
+      <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-purple-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
+            <Globe className="w-6 h-6 text-blue-600" />
+            Share Your Classroom
+          </CardTitle>
+          <CardDescription>
+            Share this URL with students worldwide (works in China and globally)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border">
+            <code className="flex-1 text-sm font-mono text-gray-700">{websiteUrl}</code>
+            <Button onClick={copyWebsiteUrl} size="sm" className="bg-blue-600 hover:bg-blue-700">
+              Copy URL
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Enhanced Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -104,6 +168,55 @@ const TeacherDashboard = () => {
             <p className="text-xs text-orange-600 mt-1">
               Last submission time
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="border-0 shadow-lg bg-white/60 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Hourly Activity
+            </CardTitle>
+            <CardDescription>Code submissions throughout the day</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={hourlyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="hour" />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="submissions" fill="var(--color-submissions)" radius={4} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg bg-white/60 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Student Activity
+            </CardTitle>
+            <CardDescription>Submissions per student</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={studentActivityData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="submissions" fill="var(--color-students)" radius={4} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>

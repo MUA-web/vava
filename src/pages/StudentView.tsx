@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { LogOut, Clock, AlertCircle, Code, Play, MessageSquare, Users, FileText } from 'lucide-react';
+import { LogOut, Clock, AlertCircle, Code, Play, MessageSquare, Users, FileText, Globe } from 'lucide-react';
 import CodeEditor from '@/components/CodeEditor';
 import Terminal from '@/components/Terminal';
 import PostContent from '@/components/PostContent';
@@ -54,6 +54,65 @@ const StudentView = () => {
     navigate('/');
   };
 
+  const simulatePythonExecution = (code: string) => {
+    try {
+      // Basic Python syntax checking and simulation
+      if (!code.trim()) {
+        return "No code to execute.";
+      }
+
+      // Check for common syntax errors
+      if (code.includes('print(') && !code.includes(')')) {
+        return "SyntaxError: Missing closing parenthesis in print statement";
+      }
+      
+      if (code.includes('def ') && !code.includes(':')) {
+        return "SyntaxError: Missing colon after function definition";
+      }
+
+      // Check for indentation issues (very basic)
+      const lines = code.split('\n');
+      let hasIndentationError = false;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.trim().endsWith(':') && i < lines.length - 1) {
+          const nextLine = lines[i + 1];
+          if (nextLine.trim() && !nextLine.startsWith(' ') && !nextLine.startsWith('\t')) {
+            hasIndentationError = true;
+            break;
+          }
+        }
+      }
+      
+      if (hasIndentationError) {
+        return "IndentationError: Expected an indented block";
+      }
+
+      // Simulate basic print statements
+      const printMatches = code.match(/print\([^)]*\)/g);
+      if (printMatches) {
+        let result = '';
+        printMatches.forEach(match => {
+          const content = match.match(/print\(([^)]*)\)/)?.[1] || '';
+          if (content.includes('"') || content.includes("'")) {
+            // String literal
+            const stringContent = content.replace(/['"]/g, '');
+            result += stringContent + '\n';
+          } else {
+            // Variable or expression
+            result += `${content}\n`;
+          }
+        });
+        return result.trim();
+      }
+
+      // If no print statements, return success message
+      return "Code executed successfully (no output)";
+    } catch (error) {
+      return `Runtime Error: ${error}`;
+    }
+  };
+
   const handleRunCode = () => {
     if (!lectureStatus?.isActive) {
       toast({
@@ -64,13 +123,16 @@ const StudentView = () => {
       return;
     }
 
+    // Simulate Python execution with better error handling
+    const executionOutput = simulatePythonExecution(code);
+    
     // Save code with timestamp
     const submission = {
       studentId: student?.studentId || student?.email,
       studentName: student?.name,
       code,
       timestamp: new Date().toISOString(),
-      output: `Code executed at ${new Date().toLocaleTimeString()}\n>>> ${code.split('\n').join('\n>>> ')}`
+      output: `Executed at ${new Date().toLocaleTimeString()}\n${executionOutput}`
     };
 
     // Store submission
@@ -78,7 +140,7 @@ const StudentView = () => {
     submissions.push(submission);
     localStorage.setItem('studentSubmissions', JSON.stringify(submissions));
 
-    // Simulate code execution
+    // Set output
     setOutput(submission.output);
 
     toast({
@@ -115,14 +177,14 @@ const StudentView = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       {/* Modern Header */}
       <div className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
                 <Code className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                   Python Studio
                 </h1>
                 <p className="text-sm text-gray-500">Welcome back, {student.name}</p>
@@ -131,7 +193,7 @@ const StudentView = () => {
             
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-50">
-                <Clock className="w-4 h-4" />
+                <Globe className="w-4 h-4" />
                 <Badge variant={isLectureActive ? "default" : "secondary"} className="border-0">
                   {isLectureActive ? `Live • ${timeRemaining}` : 'Offline'}
                 </Badge>
@@ -147,7 +209,7 @@ const StudentView = () => {
 
       {/* Status Alert */}
       {!isLectureActive && (
-        <div className="container mx-auto px-6 pt-6">
+        <div className="container mx-auto px-4 pt-6">
           <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-2xl p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
@@ -164,12 +226,12 @@ const StudentView = () => {
         </div>
       )}
 
-      <div className="container mx-auto px-6 py-6">
+      <div className="container mx-auto px-4 py-6">
         {/* Main Layout */}
         <div className="grid lg:grid-cols-12 gap-6">
           {/* Left Sidebar - Live Updates */}
           <div className="lg:col-span-4">
-            <Card className="h-[calc(100vh-200px)] border-0 shadow-lg bg-white/60 backdrop-blur-sm">
+            <Card className="h-[calc(100vh-220px)] border-0 shadow-lg bg-white/60 backdrop-blur-sm">
               <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50">
                 <CardTitle className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
@@ -185,7 +247,7 @@ const StudentView = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <ScrollArea className="h-[calc(100vh-320px)]">
+                <ScrollArea className="h-[calc(100vh-340px)]">
                   <div className="p-4 space-y-4">
                     {teacherPosts.length === 0 ? (
                       <div className="text-center py-12">
@@ -268,7 +330,7 @@ const StudentView = () => {
                   <div>
                     <CardTitle className="text-lg">Output Console</CardTitle>
                     <CardDescription className="text-sm">
-                      View your code execution results
+                      View your code execution results with helpful error tips
                     </CardDescription>
                   </div>
                 </div>
