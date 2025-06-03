@@ -267,7 +267,7 @@ const StudentView = () => {
                                 {post.type}
                               </Badge>
                             </div>
-                            <PostContent content={post.content} />
+                            <PostContent content={post.content} voiceNote={post.voiceNote} />
                             <div className="mt-3 pt-3 border-t border-gray-50">
                               <p className="text-xs text-gray-400">
                                 {new Date(post.timestamp).toLocaleString()}

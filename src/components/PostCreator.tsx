@@ -5,12 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Send, Trash2, Edit, MessageSquare } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/RichTextEditor';
 import PostContent from '@/components/PostContent';
+import VoiceRecorder from '@/components/VoiceRecorder';
+import VoiceNote from '@/components/VoiceNote';
+
+interface VoiceNoteData {
+  audioUrl: string;
+  duration: number;
+}
 
 interface Post {
   id: string;
@@ -19,6 +25,7 @@ interface Post {
   type: 'announcement' | 'assignment' | 'note';
   timestamp: string;
   author: string;
+  voiceNote?: VoiceNoteData;
 }
 
 const PostCreator = () => {
@@ -29,6 +36,7 @@ const PostCreator = () => {
     title: string;
     content: string;
     type: 'announcement' | 'assignment' | 'note';
+    voiceNote?: VoiceNoteData;
   }>({
     title: '',
     content: '',
@@ -49,6 +57,26 @@ const PostCreator = () => {
   const savePosts = (updatedPosts: Post[]) => {
     localStorage.setItem('teacherPosts', JSON.stringify(updatedPosts));
     setPosts(updatedPosts);
+  };
+
+  const handleVoiceNote = (audioBlob: Blob, duration: number) => {
+    // Convert blob to data URL for storage
+    const reader = new FileReader();
+    reader.onload = () => {
+      const audioUrl = reader.result as string;
+      setFormData(prev => ({
+        ...prev,
+        voiceNote: { audioUrl, duration }
+      }));
+    };
+    reader.readAsDataURL(audioBlob);
+  };
+
+  const removeVoiceNote = () => {
+    setFormData(prev => {
+      const { voiceNote, ...rest } = prev;
+      return rest;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -103,7 +131,8 @@ const PostCreator = () => {
     setFormData({
       title: post.title,
       content: post.content,
-      type: post.type
+      type: post.type,
+      voiceNote: post.voiceNote
     });
     setEditingPost(post);
     setIsCreating(true);
@@ -198,6 +227,32 @@ const PostCreator = () => {
                 />
               </div>
 
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Voice Note (Optional)</Label>
+                  {formData.voiceNote && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={removeVoiceNote}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                
+                {formData.voiceNote ? (
+                  <VoiceNote 
+                    audioUrl={formData.voiceNote.audioUrl}
+                    duration={formData.voiceNote.duration}
+                  />
+                ) : (
+                  <VoiceRecorder onVoiceNote={handleVoiceNote} />
+                )}
+              </div>
+
               <div className="flex gap-2">
                 <Button type="submit">
                   <Send className="w-4 h-4 mr-2" />
@@ -264,6 +319,15 @@ const PostCreator = () => {
                     </div>
                     
                     <PostContent content={post.content} />
+                    
+                    {post.voiceNote && (
+                      <div className="mt-3">
+                        <VoiceNote 
+                          audioUrl={post.voiceNote.audioUrl}
+                          duration={post.voiceNote.duration}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))
               )}
