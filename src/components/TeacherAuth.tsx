@@ -127,10 +127,10 @@ const TeacherAuth = ({ onBack }: TeacherAuthProps) => {
             </form>
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-semibold text-sm text-blue-800 mb-2">Demo Credentials:</h4>
+              <h4 className="font-semibold text-sm text-blue-800 mb-2"></h4>
               <div className="text-sm text-blue-700 space-y-1">
-                <div>Username: <code className="bg-blue-100 px-1 rounded">teacher</code></div>
-                <div>Password: <code className="bg-blue-100 px-1 rounded">demo123</code></div>
+                <div><code className="bg-blue-100 px-1 rounded"></code></div>
+                <div><code className="bg-blue-100 px-1 rounded"></code></div>
               </div>
             </div>
           </CardContent>
