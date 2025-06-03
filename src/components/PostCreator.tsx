@@ -25,10 +25,14 @@ const PostCreator = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    content: string;
+    type: 'announcement' | 'assignment' | 'note';
+  }>({
     title: '',
     content: '',
-    type: 'announcement' as const
+    type: 'announcement'
   });
 
   useEffect(() => {
