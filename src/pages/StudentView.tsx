@@ -4,15 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Clock, AlertCircle, Code, Play } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { LogOut, Clock, AlertCircle, Code, Play, MessageSquare } from 'lucide-react';
 import CodeEditor from '@/components/CodeEditor';
 import Terminal from '@/components/Terminal';
-import { checkLectureStatus } from '@/utils/fileSystem';
+import PostContent from '@/components/PostContent';
+import { checkLectureStatus, getTeacherPosts } from '@/utils/fileSystem';
 import { toast } from '@/hooks/use-toast';
 
 const StudentView = () => {
   const [student, setStudent] = useState<any>(null);
   const [lectureStatus, setLectureStatus] = useState<any>(null);
+  const [teacherPosts, setTeacherPosts] = useState<any[]>([]);
   const [code, setCode] = useState('# Welcome to Python Learning System!\n# Write your Python code here\n\nprint("Hello, World!")');
   const [output, setOutput] = useState('');
   const navigate = useNavigate();
@@ -26,14 +29,18 @@ const StudentView = () => {
 
     setStudent(JSON.parse(studentData));
 
-    // Check lecture status periodically
+    // Check lecture status and posts periodically
     const checkStatus = () => {
       const status = checkLectureStatus();
       setLectureStatus(status);
+      
+      // Load teacher posts live
+      const posts = getTeacherPosts();
+      setTeacherPosts(posts);
     };
 
     checkStatus();
-    const interval = setInterval(checkStatus, 5000); // Check every 5 seconds
+    const interval = setInterval(checkStatus, 2000); // Check every 2 seconds for live updates
 
     return () => clearInterval(interval);
   }, [navigate]);
@@ -78,6 +85,19 @@ const StudentView = () => {
       title: "Code executed",
       description: "Your code has been submitted and executed"
     });
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'announcement':
+        return 'bg-blue-100 text-blue-800';
+      case 'assignment':
+        return 'bg-green-100 text-green-800';
+      case 'note':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (!student) {
@@ -131,66 +151,118 @@ const StudentView = () => {
           </Card>
         )}
 
-        {/* Main Content */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Code Editor */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
+        {/* Main Layout: Posts on left, Editor and Terminal on right */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Left Side - Teacher Posts */}
+          <div className="lg:col-span-1">
+            <Card className="h-[calc(100vh-240px)]">
+              <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Code className="w-5 h-5" />
-                  Python Editor
+                  <MessageSquare className="w-5 h-5" />
+                  Live Updates
                 </CardTitle>
                 <CardDescription>
-                  Write your Python code here
+                  Latest announcements from your teacher ({teacherPosts.length} posts)
                 </CardDescription>
-              </div>
-              <Button 
-                onClick={handleRunCode}
-                disabled={!isLectureActive}
-                size="sm"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Run Code
-              </Button>
-            </CardHeader>
-            <CardContent className="p-0">
-              <CodeEditor
-                value={code}
-                onChange={setCode}
-                disabled={!isLectureActive}
-              />
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="p-0">
+                <ScrollArea className="h-[calc(100vh-340px)] px-6">
+                  <div className="space-y-4 pb-4">
+                    {teacherPosts.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <p>No announcements yet</p>
+                        <p className="text-sm">Your teacher hasn't posted anything</p>
+                      </div>
+                    ) : (
+                      teacherPosts.map((post) => (
+                        <div key={post.id} className="border rounded-lg p-4 bg-white shadow-sm">
+                          <div className="flex flex-col gap-2 mb-3">
+                            <h3 className="font-semibold text-base">{post.title}</h3>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                              <Badge className={getTypeColor(post.type)}>
+                                {post.type}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(post.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          <PostContent content={post.content} />
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Terminal */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Output Terminal</CardTitle>
-              <CardDescription>
-                Code execution results will appear here
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Terminal output={output} />
-            </CardContent>
-          </Card>
+          {/* Right Side - Editor and Terminal */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Code Editor - Larger */}
+            <Card className="flex-1">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Code className="w-5 h-5" />
+                    Python Editor
+                  </CardTitle>
+                  <CardDescription>
+                    Write your Python code here
+                  </CardDescription>
+                </div>
+                <Button 
+                  onClick={handleRunCode}
+                  disabled={!isLectureActive}
+                  size="sm"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Run Code
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="h-[450px]">
+                  <CodeEditor
+                    value={code}
+                    onChange={setCode}
+                    disabled={!isLectureActive}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Terminal - Smaller */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Output Terminal</CardTitle>
+                <CardDescription>
+                  Code execution results will appear here
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="h-[250px]">
+                  <Terminal output={output} />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Session Info */}
+        {/* Session Info - Moved to bottom */}
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>Session Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <div>
                 <span className="font-medium text-gray-600">Student ID:</span>
-                <p className="text-gray-900">{student.studentId}</p>
+                <p className="text-gray-900 break-all">{student.studentId}</p>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Email:</span>
-                <p className="text-gray-900">{student.email}</p>
+                <p className="text-gray-900 break-all">{student.email}</p>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Login Time:</span>

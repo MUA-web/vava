@@ -33,13 +33,13 @@ const CodeEditor = ({ value, onChange, disabled = false }: CodeEditorProps) => {
   }, [value, onChange]);
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       <textarea
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className={`w-full h-96 p-4 font-mono text-sm bg-gray-900 text-green-400 border-0 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+        className={`w-full h-full p-4 pl-14 font-mono text-sm bg-gray-900 text-green-400 border-0 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         }`}
         placeholder="# Write your Python code here..."
@@ -47,9 +47,9 @@ const CodeEditor = ({ value, onChange, disabled = false }: CodeEditorProps) => {
       />
       
       {/* Line numbers */}
-      <div className="absolute left-0 top-0 w-12 h-full bg-gray-800 border-r border-gray-700 p-4 font-mono text-xs text-gray-400 select-none">
+      <div className="absolute left-0 top-0 w-12 h-full bg-gray-800 border-r border-gray-700 p-4 font-mono text-xs text-gray-400 select-none overflow-hidden">
         {value.split('\n').map((_, index) => (
-          <div key={index} className="leading-5">
+          <div key={index} className="leading-5 h-5">
             {index + 1}
           </div>
         ))}
