@@ -9,8 +9,9 @@ import { LogOut, Clock, AlertCircle, Code, Play, MessageSquare, Users, FileText,
 import CodeEditor from '@/components/CodeEditor';
 import Terminal from '@/components/Terminal';
 import PostContent from '@/components/PostContent';
-import { checkLectureStatus, getTeacherPosts } from '@/utils/fileSystem';
+import { checkLectureStatus, getTeacherPosts, saveStudentSubmission } from '@/utils/fileSystem';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const StudentView = () => {
   const [student, setStudent] = useState<any>(null);
@@ -29,20 +30,61 @@ const StudentView = () => {
 
     setStudent(JSON.parse(studentData));
 
-    // Check lecture status and posts periodically
-    const checkStatus = () => {
-      const status = checkLectureStatus();
+    // Initial load
+    const loadData = async () => {
+      const status = await checkLectureStatus();
       setLectureStatus(status);
       
-      // Load teacher posts live
-      const posts = getTeacherPosts();
+      const posts = await getTeacherPosts();
       setTeacherPosts(posts);
     };
 
-    checkStatus();
-    const interval = setInterval(checkStatus, 2000); // Check every 2 seconds for live updates
+    loadData();
 
-    return () => clearInterval(interval);
+    // Set up real-time subscriptions
+    const postsChannel = supabase
+      .channel('posts-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts'
+        },
+        async () => {
+          const posts = await getTeacherPosts();
+          setTeacherPosts(posts);
+        }
+      )
+      .subscribe();
+
+    const lectureChannel = supabase
+      .channel('lecture-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lecture_sessions'
+        },
+        async () => {
+          const status = await checkLectureStatus();
+          setLectureStatus(status);
+        }
+      )
+      .subscribe();
+
+    // Check status periodically as backup
+    const interval = setInterval(async () => {
+      const status = await checkLectureStatus();
+      setLectureStatus(status);
+    }, 30000); // Check every 30 seconds
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(postsChannel);
+      supabase.removeChannel(lectureChannel);
+    };
   }, [navigate]);
 
   const handleLogout = () => {
@@ -113,7 +155,7 @@ const StudentView = () => {
     }
   };
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
     if (!lectureStatus?.isActive) {
       toast({
         title: "Session not active",
@@ -126,7 +168,7 @@ const StudentView = () => {
     // Simulate Python execution with better error handling
     const executionOutput = simulatePythonExecution(code);
     
-    // Save code with timestamp
+    // Save code with timestamp to Supabase
     const submission = {
       studentId: student?.studentId || student?.email,
       studentName: student?.name,
@@ -135,10 +177,7 @@ const StudentView = () => {
       output: `Executed at ${new Date().toLocaleTimeString()}\n${executionOutput}`
     };
 
-    // Store submission
-    const submissions = JSON.parse(localStorage.getItem('studentSubmissions') || '[]');
-    submissions.push(submission);
-    localStorage.setItem('studentSubmissions', JSON.stringify(submissions));
+    await saveStudentSubmission(submission);
 
     // Set output
     setOutput(submission.output);

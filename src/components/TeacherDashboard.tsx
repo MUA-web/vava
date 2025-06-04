@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +8,8 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { Users, Code, Clock, RefreshCw, Eye, TrendingUp, BarChart3, Globe } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { getStudentSubmissions } from '@/utils/fileSystem';
+import { supabase } from '@/integrations/supabase/client';
 
 const chartConfig = {
   submissions: {
@@ -28,17 +31,38 @@ const TeacherDashboard = () => {
     // Get current website URL for sharing
     setWebsiteUrl(window.location.origin);
 
-    const loadSubmissions = () => {
-      const data = JSON.parse(localStorage.getItem('studentSubmissions') || '[]');
+    const loadSubmissions = async () => {
+      const data = await getStudentSubmissions();
       setSubmissions(data.sort((a: any, b: any) => 
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       ));
     };
 
     loadSubmissions();
-    const interval = setInterval(loadSubmissions, 2000);
 
-    return () => clearInterval(interval);
+    // Set up real-time subscription for submissions
+    const channel = supabase
+      .channel('submissions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'student_submissions'
+        },
+        () => {
+          loadSubmissions(); // Reload submissions when changes occur
+        }
+      )
+      .subscribe();
+
+    // Fallback polling every 10 seconds
+    const interval = setInterval(loadSubmissions, 10000);
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const uniqueStudents = submissions.reduce((acc: any[], submission: any) => {

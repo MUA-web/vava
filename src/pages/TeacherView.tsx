@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, Monitor, FileText, Settings, Shield } from 'lucide-react';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import TeacherDashboard from '@/components/TeacherDashboard';
-import LectureTimeManager from '@/components/LectureTimeManager';
+import LectureManager from '@/components/LectureManager';
 import PostCreator from '@/components/PostCreator';
 import { toast } from '@/hooks/use-toast';
 
@@ -121,7 +121,7 @@ const TeacherView = () => {
           <div className="container mx-auto px-6 py-8">
             {activeTab === 'monitoring' && <TeacherDashboard />}
             {activeTab === 'posts' && <PostCreator />}
-            {activeTab === 'settings' && <LectureTimeManager />}
+            {activeTab === 'settings' && <LectureManager />}
           </div>
         </SidebarInset>
       </div>

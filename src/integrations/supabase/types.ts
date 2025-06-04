@@ -9,7 +9,99 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      lecture_sessions: {
+        Row: {
+          created_at: string
+          duration: number | null
+          end_time: string | null
+          id: string
+          is_active: boolean
+          start_time: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration?: number | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean
+          start_time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration?: number | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean
+          start_time?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          author: string
+          content: string
+          created_at: string
+          id: string
+          title: string
+          type: string
+          updated_at: string
+          voice_note_duration: number | null
+          voice_note_url: string | null
+        }
+        Insert: {
+          author: string
+          content: string
+          created_at?: string
+          id?: string
+          title: string
+          type: string
+          updated_at?: string
+          voice_note_duration?: number | null
+          voice_note_url?: string | null
+        }
+        Update: {
+          author?: string
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          voice_note_duration?: number | null
+          voice_note_url?: string | null
+        }
+        Relationships: []
+      }
+      student_submissions: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          output: string
+          student_id: string
+          student_name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          output: string
+          student_id: string
+          student_name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          output?: string
+          student_id?: string
+          student_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -12,6 +12,8 @@ import RichTextEditor from '@/components/RichTextEditor';
 import PostContent from '@/components/PostContent';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import VoiceNote from '@/components/VoiceNote';
+import { getTeacherPosts, saveTeacherPost } from '@/utils/fileSystem';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VoiceNoteData {
   audioUrl: string;
@@ -45,18 +47,31 @@ const PostCreator = () => {
 
   useEffect(() => {
     loadPosts();
+
+    // Set up real-time subscription for posts
+    const channel = supabase
+      .channel('posts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts'
+        },
+        () => {
+          loadPosts(); // Reload posts when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const loadPosts = () => {
-    const savedPosts = localStorage.getItem('teacherPosts');
-    if (savedPosts) {
-      setPosts(JSON.parse(savedPosts));
-    }
-  };
-
-  const savePosts = (updatedPosts: Post[]) => {
-    localStorage.setItem('teacherPosts', JSON.stringify(updatedPosts));
-    setPosts(updatedPosts);
+  const loadPosts = async () => {
+    const fetchedPosts = await getTeacherPosts();
+    setPosts(fetchedPosts);
   };
 
   const handleVoiceNote = (audioBlob: Blob, duration: number) => {
@@ -79,7 +94,7 @@ const PostCreator = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.title.trim() || !formData.content.trim()) {
@@ -94,29 +109,46 @@ const PostCreator = () => {
     const teacher = JSON.parse(localStorage.getItem('currentTeacher') || '{}');
     
     if (editingPost) {
-      // Update existing post
-      const updatedPosts = posts.map(post => 
-        post.id === editingPost.id 
-          ? { ...post, ...formData, timestamp: new Date().toISOString() }
-          : post
-      );
-      savePosts(updatedPosts);
-      setEditingPost(null);
-      toast({
-        title: "Post Updated",
-        description: "Your post has been updated successfully"
-      });
+      // Update existing post in Supabase
+      try {
+        const { error } = await supabase
+          .from('posts')
+          .update({
+            title: formData.title,
+            content: formData.content,
+            type: formData.type,
+            voice_note_url: formData.voiceNote?.audioUrl,
+            voice_note_duration: formData.voiceNote?.duration,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingPost.id);
+
+        if (error) throw error;
+
+        setEditingPost(null);
+        toast({
+          title: "Post Updated",
+          description: "Your post has been updated successfully"
+        });
+      } catch (error) {
+        console.error('Error updating post:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update post",
+          variant: "destructive"
+        });
+      }
     } else {
-      // Create new post
-      const newPost: Post = {
-        id: Date.now().toString(),
-        ...formData,
-        timestamp: new Date().toISOString(),
-        author: teacher.username || 'Teacher'
+      // Create new post in Supabase
+      const newPost = {
+        title: formData.title,
+        content: formData.content,
+        type: formData.type,
+        author: teacher.username || 'Teacher',
+        voiceNote: formData.voiceNote
       };
       
-      const updatedPosts = [newPost, ...posts];
-      savePosts(updatedPosts);
+      await saveTeacherPost(newPost);
       toast({
         title: "Post Created",
         description: "Your post has been published successfully"
@@ -125,6 +157,7 @@ const PostCreator = () => {
 
     setFormData({ title: '', content: '', type: 'announcement' });
     setIsCreating(false);
+    loadPosts(); // Refresh the posts list
   };
 
   const handleEdit = (post: Post) => {
@@ -138,13 +171,28 @@ const PostCreator = () => {
     setIsCreating(true);
   };
 
-  const handleDelete = (postId: string) => {
-    const updatedPosts = posts.filter(post => post.id !== postId);
-    savePosts(updatedPosts);
-    toast({
-      title: "Post Deleted",
-      description: "The post has been removed"
-    });
+  const handleDelete = async (postId: string) => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Post Deleted",
+        description: "The post has been removed"
+      });
+      loadPosts(); // Refresh the posts list
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete post",
+        variant: "destructive"
+      });
+    }
   };
 
   const cancelEdit = () => {
