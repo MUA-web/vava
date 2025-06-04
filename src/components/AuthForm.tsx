@@ -237,8 +237,8 @@ const AuthForm = ({ onBack, userType }: AuthFormProps) => {
                 disabled={loading}
               >
                 {isLogin 
-                  ? "Don't have an account? Sign up" 
-                  : "Already have an account? Sign in"
+                  ? "-------------- " 
+                  : "-------------- "
                 }
               </Button>
             </div>

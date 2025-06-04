@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+supabase/config.toml
+
+# 🌐 Supabase client ()
+src/integrations/supabase/client.ts
+
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
