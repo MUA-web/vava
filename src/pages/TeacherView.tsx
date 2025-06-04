@@ -1,45 +1,41 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, Monitor, FileText, Settings, Shield } from 'lucide-react';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import TeacherDashboard from '@/components/TeacherDashboard';
 import LectureManager from '@/components/LectureManager';
 import PostCreator from '@/components/PostCreator';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const TeacherView = () => {
-  const [teacher, setTeacher] = useState<any>(null);
+  const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('monitoring');
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const teacherData = localStorage.getItem('currentTeacher');
-    if (!teacherData) {
-      navigate('/');
-      return;
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully"
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if signOut fails
+      window.location.href = '/';
     }
-    setTeacher(JSON.parse(teacherData));
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('currentTeacher');
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully"
-    });
-    navigate('/');
   };
 
-  if (!teacher) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
+
+  const teacherName = user.user_metadata?.name || user.email;
 
   const menuItems = [
     {
@@ -72,7 +68,7 @@ const TeacherView = () => {
                 <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                   Instructor Dashboard
                 </h1>
-                <p className="text-sm text-gray-500">Welcome, {teacher.username}</p>
+                <p className="text-sm text-gray-500">Welcome, {teacherName}</p>
               </div>
             </div>
           </SidebarHeader>

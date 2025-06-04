@@ -1,6 +1,4 @@
-
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,23 +10,17 @@ import PostContent from '@/components/PostContent';
 import { checkLectureStatus, getTeacherPosts, saveStudentSubmission } from '@/utils/fileSystem';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const StudentView = () => {
-  const [student, setStudent] = useState<any>(null);
+  const { user, signOut } = useAuth();
   const [lectureStatus, setLectureStatus] = useState<any>(null);
   const [teacherPosts, setTeacherPosts] = useState<any[]>([]);
   const [code, setCode] = useState('# Welcome to Python Learning System!\n# Write your Python code here\n\nprint("Hello, World!")');
   const [output, setOutput] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const studentData = localStorage.getItem('currentStudent');
-    if (!studentData) {
-      navigate('/');
-      return;
-    }
-
-    setStudent(JSON.parse(studentData));
+    if (!user) return;
 
     // Initial load
     const loadData = async () => {
@@ -85,15 +77,20 @@ const StudentView = () => {
       supabase.removeChannel(postsChannel);
       supabase.removeChannel(lectureChannel);
     };
-  }, [navigate]);
+  }, [user]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('currentStudent');
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully"
-    });
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully"
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if signOut fails
+      window.location.href = '/';
+    }
   };
 
   const simulatePythonExecution = (code: string) => {
@@ -170,8 +167,8 @@ const StudentView = () => {
     
     // Save code with timestamp to Supabase
     const submission = {
-      studentId: student?.studentId || student?.email,
-      studentName: student?.name,
+      studentId: user?.id || user?.email || 'unknown',
+      studentName: user?.user_metadata?.name || user?.email || 'Unknown Student',
       code,
       timestamp: new Date().toISOString(),
       output: `Executed at ${new Date().toLocaleTimeString()}\n${executionOutput}`
@@ -201,7 +198,7 @@ const StudentView = () => {
     }
   };
 
-  if (!student) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -211,6 +208,8 @@ const StudentView = () => {
 
   const isLectureActive = lectureStatus?.isActive;
   const timeRemaining = lectureStatus?.remainingTime;
+  const studentName = user.user_metadata?.name || user.email;
+  const studentId = user.user_metadata?.student_id || user.id;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
@@ -226,7 +225,7 @@ const StudentView = () => {
                 <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                   Python Studio
                 </h1>
-                <p className="text-sm text-gray-500">Welcome back, {student.name}</p>
+                <p className="text-sm text-gray-500">Welcome back, {studentName}</p>
               </div>
             </div>
             
@@ -393,7 +392,7 @@ const StudentView = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Student ID</p>
-                  <p className="text-gray-900 font-mono text-sm">{student.studentId}</p>
+                  <p className="text-gray-900 font-mono text-sm">{studentId}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -402,7 +401,7 @@ const StudentView = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Email</p>
-                  <p className="text-gray-900 text-sm break-all">{student.email}</p>
+                  <p className="text-gray-900 text-sm break-all">{user.email}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -412,7 +411,7 @@ const StudentView = () => {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Login Time</p>
                   <p className="text-gray-900 text-sm">
-                    {new Date(student.loginTime).toLocaleTimeString()}
+                    {new Date().toLocaleTimeString()}
                   </p>
                 </div>
               </div>
