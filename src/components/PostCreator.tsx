@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,7 +70,12 @@ const PostCreator = () => {
 
   const loadPosts = async () => {
     const fetchedPosts = await getTeacherPosts();
-    setPosts(fetchedPosts);
+    // Type cast the posts to ensure proper TypeScript typing
+    const typedPosts: Post[] = fetchedPosts.map(post => ({
+      ...post,
+      type: post.type as 'announcement' | 'assignment' | 'note'
+    }));
+    setPosts(typedPosts);
   };
 
   const handleVoiceNote = (audioBlob: Blob, duration: number) => {
