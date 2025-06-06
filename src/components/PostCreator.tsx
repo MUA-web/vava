@@ -146,12 +146,13 @@ const PostCreator = () => {
             title: formData.title,
             content: formData.content,
             type: formData.type,
-            voice_note_url: formData.voiceNote?.audioUrl,
-            voice_note_duration: formData.voiceNote?.duration,
-            video_url: formData.video?.videoUrl,
-            video_duration: formData.video?.duration,
-            video_filename: formData.video?.fileName,
-            video_transcript: formData.video?.transcript,
+            voice_note_url: formData.voiceNote?.audioUrl || null,
+            voice_note_duration: formData.voiceNote?.duration || null,
+            video_url: formData.video?.videoUrl || null,
+            video_duration: formData.video?.duration || null,
+            video_filename: formData.video?.fileName || null,
+            video_filesize: formData.video?.fileSize || null,
+            video_transcript: formData.video?.transcript || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', editingPost.id);

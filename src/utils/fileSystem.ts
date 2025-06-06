@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 interface LectureSession {
@@ -134,7 +133,7 @@ export const getTeacherPosts = async () => {
         duration: post.video_duration || 0,
         fileName: post.video_filename || 'video.mp4',
         fileSize: post.video_filesize || 0,
-        transcript: post.video_transcript
+        transcript: post.video_transcript || undefined
       } : undefined
     })) || [];
   } catch (error) {
@@ -152,13 +151,13 @@ export const saveTeacherPost = async (post: any) => {
         content: post.content,
         type: post.type,
         author: post.author,
-        voice_note_url: post.voiceNote?.audioUrl,
-        voice_note_duration: post.voiceNote?.duration,
-        video_url: post.video?.videoUrl,
-        video_duration: post.video?.duration,
-        video_filename: post.video?.fileName,
-        video_filesize: post.video?.fileSize,
-        video_transcript: post.video?.transcript
+        voice_note_url: post.voiceNote?.audioUrl || null,
+        voice_note_duration: post.voiceNote?.duration || null,
+        video_url: post.video?.videoUrl || null,
+        video_duration: post.video?.duration || null,
+        video_filename: post.video?.fileName || null,
+        video_filesize: post.video?.fileSize || null,
+        video_transcript: post.video?.transcript || null
       });
 
     if (error) {

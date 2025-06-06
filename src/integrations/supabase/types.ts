@@ -48,6 +48,11 @@ export type Database = {
           title: string
           type: string
           updated_at: string
+          video_duration: number | null
+          video_filename: string | null
+          video_filesize: number | null
+          video_transcript: string | null
+          video_url: string | null
           voice_note_duration: number | null
           voice_note_url: string | null
         }
@@ -59,6 +64,11 @@ export type Database = {
           title: string
           type: string
           updated_at?: string
+          video_duration?: number | null
+          video_filename?: string | null
+          video_filesize?: number | null
+          video_transcript?: string | null
+          video_url?: string | null
           voice_note_duration?: number | null
           voice_note_url?: string | null
         }
@@ -70,6 +80,11 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string
+          video_duration?: number | null
+          video_filename?: string | null
+          video_filesize?: number | null
+          video_transcript?: string | null
+          video_url?: string | null
           voice_note_duration?: number | null
           voice_note_url?: string | null
         }
