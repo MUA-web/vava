@@ -13,10 +13,19 @@ import VoiceRecorder from '@/components/VoiceRecorder';
 import VoiceNote from '@/components/VoiceNote';
 import { getTeacherPosts, saveTeacherPost } from '@/utils/fileSystem';
 import { supabase } from '@/integrations/supabase/client';
+import VideoUpload from '@/components/VideoUpload';
 
 interface VoiceNoteData {
   audioUrl: string;
   duration: number;
+}
+
+interface VideoData {
+  videoUrl: string;
+  duration: number;
+  fileName: string;
+  fileSize: number;
+  transcript?: string;
 }
 
 interface Post {
@@ -27,6 +36,7 @@ interface Post {
   timestamp: string;
   author: string;
   voiceNote?: VoiceNoteData;
+  video?: VideoData;
 }
 
 const PostCreator = () => {
@@ -38,6 +48,7 @@ const PostCreator = () => {
     content: string;
     type: 'announcement' | 'assignment' | 'note';
     voiceNote?: VoiceNoteData;
+    video?: VideoData;
   }>({
     title: '',
     content: '',
@@ -91,9 +102,23 @@ const PostCreator = () => {
     reader.readAsDataURL(audioBlob);
   };
 
+  const handleVideoUpload = (videoData: VideoData) => {
+    setFormData(prev => ({
+      ...prev,
+      video: videoData
+    }));
+  };
+
   const removeVoiceNote = () => {
     setFormData(prev => {
       const { voiceNote, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const removeVideo = () => {
+    setFormData(prev => {
+      const { video, ...rest } = prev;
       return rest;
     });
   };
@@ -123,6 +148,10 @@ const PostCreator = () => {
             type: formData.type,
             voice_note_url: formData.voiceNote?.audioUrl,
             voice_note_duration: formData.voiceNote?.duration,
+            video_url: formData.video?.videoUrl,
+            video_duration: formData.video?.duration,
+            video_filename: formData.video?.fileName,
+            video_transcript: formData.video?.transcript,
             updated_at: new Date().toISOString()
           })
           .eq('id', editingPost.id);
@@ -149,7 +178,8 @@ const PostCreator = () => {
         content: formData.content,
         type: formData.type,
         author: teacher.username || 'Teacher',
-        voiceNote: formData.voiceNote
+        voiceNote: formData.voiceNote,
+        video: formData.video
       };
       
       await saveTeacherPost(newPost);
@@ -169,7 +199,8 @@ const PostCreator = () => {
       title: post.title,
       content: post.content,
       type: post.type,
-      voiceNote: post.voiceNote
+      voiceNote: post.voiceNote,
+      video: post.video
     });
     setEditingPost(post);
     setIsCreating(true);
@@ -279,6 +310,29 @@ const PostCreator = () => {
                 />
               </div>
 
+              {/* Video Upload Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Video Attachment (Optional)</Label>
+                  {formData.video && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={removeVideo}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Remove Video
+                    </Button>
+                  )}
+                </div>
+                
+                <VideoUpload 
+                  onVideoUpload={handleVideoUpload}
+                  existingVideo={formData.video}
+                />
+              </div>
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label>Voice Note (Optional)</Label>
@@ -370,16 +424,11 @@ const PostCreator = () => {
                       </div>
                     </div>
                     
-                    <PostContent content={post.content} />
-                    
-                    {post.voiceNote && (
-                      <div className="mt-3">
-                        <VoiceNote 
-                          audioUrl={post.voiceNote.audioUrl}
-                          duration={post.voiceNote.duration}
-                        />
-                      </div>
-                    )}
+                    <PostContent 
+                      content={post.content} 
+                      voiceNote={post.voiceNote}
+                      video={post.video}
+                    />
                   </div>
                 ))
               )}

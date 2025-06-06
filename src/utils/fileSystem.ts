@@ -128,6 +128,13 @@ export const getTeacherPosts = async () => {
       voiceNote: post.voice_note_url ? {
         audioUrl: post.voice_note_url,
         duration: post.voice_note_duration || 0
+      } : undefined,
+      video: post.video_url ? {
+        videoUrl: post.video_url,
+        duration: post.video_duration || 0,
+        fileName: post.video_filename || 'video.mp4',
+        fileSize: post.video_filesize || 0,
+        transcript: post.video_transcript
       } : undefined
     })) || [];
   } catch (error) {
@@ -146,7 +153,12 @@ export const saveTeacherPost = async (post: any) => {
         type: post.type,
         author: post.author,
         voice_note_url: post.voiceNote?.audioUrl,
-        voice_note_duration: post.voiceNote?.duration
+        voice_note_duration: post.voiceNote?.duration,
+        video_url: post.video?.videoUrl,
+        video_duration: post.video?.duration,
+        video_filename: post.video?.fileName,
+        video_filesize: post.video?.fileSize,
+        video_transcript: post.video?.transcript
       });
 
     if (error) {
