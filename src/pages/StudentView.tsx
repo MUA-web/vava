@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { LogOut, Clock, AlertCircle, Code, Play, MessageSquare, Users, FileText, Globe } from 'lucide-react';
-import CodeEditor from '@/components/CodeEditor';
+import CodeEditor, { simulatePythonExecution } from '@/components/CodeEditor';
 import Terminal from '@/components/Terminal';
 import PostContent from '@/components/PostContent';
 import { checkLectureStatus, getTeacherPosts, saveStudentSubmission } from '@/utils/fileSystem';
@@ -16,7 +17,32 @@ const StudentView = () => {
   const { user, signOut } = useAuth();
   const [lectureStatus, setLectureStatus] = useState<any>(null);
   const [teacherPosts, setTeacherPosts] = useState<any[]>([]);
-  const [code, setCode] = useState('# Welcome to Python Learning System!\n# Write your Python code here\n\nprint("Hello, World!")');
+  const [code, setCode] = useState(`# Python Learning System - Full Syntax Support!
+# Try various Python features:
+
+# Variables and basic operations
+name = "Student"
+age = 20
+print("Hello", name, "you are", age, "years old")
+
+# Lists and operations
+numbers = [1, 2, 3, 4, 5]
+print("Numbers:", numbers)
+
+# Dictionary
+student_info = {"name": "Alice", "grade": "A", "age": 21}
+print("Student info:", student_info)
+
+# Control flow
+for num in numbers:
+    if num > 3:
+        print(num, "is greater than 3")
+
+# Function definition
+def greet(person):
+    print("Hello", person)
+
+greet("Python Learner")`);
   const [output, setOutput] = useState('');
 
   useEffect(() => {
@@ -162,7 +188,7 @@ const StudentView = () => {
       return;
     }
 
-    // Simulate Python execution with better error handling
+    // Use the comprehensive Python simulator
     const executionOutput = simulatePythonExecution(code);
     
     // Save code with timestamp to Supabase
@@ -181,7 +207,7 @@ const StudentView = () => {
 
     toast({
       title: "Code executed",
-      description: "Your code has been submitted and executed"
+      description: "Your Python code has been submitted and executed"
     });
   };
 

@@ -75,6 +75,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          student_id: string | null
+          updated_at: string
+          user_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name?: string | null
+          student_id?: string | null
+          updated_at?: string
+          user_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          student_id?: string | null
+          updated_at?: string
+          user_type?: string | null
+        }
+        Relationships: []
+      }
       student_submissions: {
         Row: {
           code: string
