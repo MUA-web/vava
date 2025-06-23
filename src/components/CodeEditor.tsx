@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 
 interface CodeEditorProps {
@@ -339,26 +338,21 @@ const CodeEditor = ({ value, onChange, disabled = false }: CodeEditorProps) => {
   }, [value, onChange]);
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full rounded-xl shadow-lg bg-gradient-to-br from-gray-50 via-white to-gray-100 border border-gray-200 overflow-hidden">
       <textarea
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className={`w-full h-full p-4 pl-14 font-mono text-sm bg-gray-900 text-green-400 border-0 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+        className={`w-full h-full p-4 pl-14 font-mono text-sm bg-transparent text-gray-800 border-0 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200 ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         }`}
-        placeholder="# Write your Python code here...
-# Supports: variables, lists, tuples, dictionaries
-# Control flow: if/elif/else, for/while loops
-# Functions: def function_name():
-# Classes: class ClassName:
-# And much more!"
         spellCheck={false}
+        aria-label="Python code editor"
       />
       
       {/* Line numbers */}
-      <div className="absolute left-0 top-0 w-12 h-full bg-gray-800 border-r border-gray-700 p-4 font-mono text-xs text-gray-400 select-none overflow-hidden">
+      <div className="absolute left-0 top-0 w-12 h-full bg-gradient-to-b from-gray-200 via-gray-100 to-gray-50 border-r border-gray-300 p-4 font-mono text-xs text-gray-400 select-none overflow-hidden flex flex-col items-end">
         {value.split('\n').map((_, index) => (
           <div key={index} className="leading-5 h-5">
             {index + 1}
@@ -369,6 +363,5 @@ const CodeEditor = ({ value, onChange, disabled = false }: CodeEditorProps) => {
   );
 };
 
-// Export the simulator function for use in StudentView
-export { simulatePythonExecution };
+// export { simulatePythonExecution };
 export default CodeEditor;

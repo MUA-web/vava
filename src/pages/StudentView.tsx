@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,44 +7,23 @@ import { LogOut, Clock, AlertCircle, Code, Play, MessageSquare, Users, FileText,
 import CodeEditor, { simulatePythonExecution } from '@/components/CodeEditor';
 import Terminal from '@/components/Terminal';
 import PostContent from '@/components/PostContent';
-import { checkLectureStatus, getTeacherPosts, saveStudentSubmission } from '@/utils/fileSystem';
+import { checkLectureStatus, getTeacherPosts, saveStudentSubmission, upsertStudentSession } from '@/utils/fileSystem';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { runPython, injectPyodideScript, isPyodideLoading } from '@/utils/pyodideRunner';
 
 const StudentView = () => {
   const { user, signOut } = useAuth();
   const [lectureStatus, setLectureStatus] = useState<any>(null);
   const [teacherPosts, setTeacherPosts] = useState<any[]>([]);
-  const [code, setCode] = useState(`# Python Learning System - Full Syntax Support!
-# Try various Python features:
-
-# Variables and basic operations
-name = "Student"
-age = 20
-print("Hello", name, "you are", age, "years old")
-
-# Lists and operations
-numbers = [1, 2, 3, 4, 5]
-print("Numbers:", numbers)
-
-# Dictionary
-student_info = {"name": "Alice", "grade": "A", "age": 21}
-print("Student info:", student_info)
-
-# Control flow
-for num in numbers:
-    if num > 3:
-        print(num, "is greater than 3")
-
-# Function definition
-def greet(person):
-    print("Hello", person)
-
-greet("Python Learner")`);
+  const [code, setCode] = useState('');
   const [output, setOutput] = useState('');
+  const [isRunning, setIsRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    injectPyodideScript(); // Ensure Pyodide script is loaded
     if (!user) return;
 
     // Initial load
@@ -93,17 +71,47 @@ greet("Python Learner")`);
       .subscribe();
 
     // Check status periodically as backup
-    const interval = setInterval(async () => {
+    const statusInterval = setInterval(async () => {
       const status = await checkLectureStatus();
       setLectureStatus(status);
     }, 30000); // Check every 30 seconds
 
+    // Upsert student online status every 30 seconds
+    let onlineInterval: NodeJS.Timeout | null = null;
+    const updateOnlineStatus = async () => {
+      if (lectureStatus?.id && user && lectureStatus?.isActive) {
+        console.log('[StudentView] Updating online status:', {
+          studentId: user.id || user.email || 'unknown',
+          studentName: user.user_metadata?.name || user.email || 'Unknown Student',
+          sessionId: lectureStatus.id
+        });
+        const { error } = await upsertStudentSession(
+          user.id || user.email || 'unknown',
+          user.user_metadata?.name || user.email || 'Unknown Student',
+          lectureStatus.id
+        );
+        if (error) {
+          console.error('[StudentView] Error updating online status:', error);
+        }
+      } else {
+        console.warn('[StudentView] Missing user or sessionId for online status update', { user, sessionId: lectureStatus?.id });
+      }
+    };
+
+    // Call immediately if session is active
+    if (lectureStatus?.isActive && user && lectureStatus?.id) {
+      updateOnlineStatus();
+    }
+    if (lectureStatus?.isActive) {
+      onlineInterval = setInterval(updateOnlineStatus, 30000);
+    }
     return () => {
-      clearInterval(interval);
+      clearInterval(statusInterval);
+      if (onlineInterval) clearInterval(onlineInterval);
       supabase.removeChannel(postsChannel);
       supabase.removeChannel(lectureChannel);
     };
-  }, [user]);
+  }, [user, lectureStatus]);
 
   const handleLogout = async () => {
     try {
@@ -119,65 +127,6 @@ greet("Python Learner")`);
     }
   };
 
-  const simulatePythonExecution = (code: string) => {
-    try {
-      // Basic Python syntax checking and simulation
-      if (!code.trim()) {
-        return "No code to execute.";
-      }
-
-      // Check for common syntax errors
-      if (code.includes('print(') && !code.includes(')')) {
-        return "SyntaxError: Missing closing parenthesis in print statement";
-      }
-      
-      if (code.includes('def ') && !code.includes(':')) {
-        return "SyntaxError: Missing colon after function definition";
-      }
-
-      // Check for indentation issues (very basic)
-      const lines = code.split('\n');
-      let hasIndentationError = false;
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (line.trim().endsWith(':') && i < lines.length - 1) {
-          const nextLine = lines[i + 1];
-          if (nextLine.trim() && !nextLine.startsWith(' ') && !nextLine.startsWith('\t')) {
-            hasIndentationError = true;
-            break;
-          }
-        }
-      }
-      
-      if (hasIndentationError) {
-        return "IndentationError: Expected an indented block";
-      }
-
-      // Simulate basic print statements
-      const printMatches = code.match(/print\([^)]*\)/g);
-      if (printMatches) {
-        let result = '';
-        printMatches.forEach(match => {
-          const content = match.match(/print\(([^)]*)\)/)?.[1] || '';
-          if (content.includes('"') || content.includes("'")) {
-            // String literal
-            const stringContent = content.replace(/['"]/g, '');
-            result += stringContent + '\n';
-          } else {
-            // Variable or expression
-            result += `${content}\n`;
-          }
-        });
-        return result.trim();
-      }
-
-      // If no print statements, return success message
-      return "Code executed successfully (no output)";
-    } catch (error) {
-      return `Runtime Error: ${error}`;
-    }
-  };
-
   const handleRunCode = async () => {
     if (!lectureStatus?.isActive) {
       toast({
@@ -187,28 +136,31 @@ greet("Python Learner")`);
       });
       return;
     }
-
-    // Use the comprehensive Python simulator
-    const executionOutput = simulatePythonExecution(code);
-    
-    // Save code with timestamp to Supabase
-    const submission = {
-      studentId: user?.id || user?.email || 'unknown',
-      studentName: user?.user_metadata?.name || user?.email || 'Unknown Student',
-      code,
-      timestamp: new Date().toISOString(),
-      output: `Executed at ${new Date().toLocaleTimeString()}\n${executionOutput}`
-    };
-
-    await saveStudentSubmission(submission);
-
-    // Set output
-    setOutput(submission.output);
-
-    toast({
-      title: "Code executed",
-      description: "Your Python code has been submitted and executed"
-    });
+    if (isRunning || isPyodideLoading()) return;
+    setIsRunning(true);
+    setError(null);
+    setOutput('Running Python code...');
+    try {
+      const executionOutput = await runPython(code);
+      setOutput(executionOutput);
+      if (executionOutput.toLowerCase().includes('error')) {
+        setError(executionOutput);
+      }
+      // Save code with timestamp to Supabase
+      const submission = {
+        studentId: user?.id || user?.email || 'unknown',
+        studentName: user?.user_metadata?.name || user?.email || 'Unknown Student',
+        code,
+        timestamp: new Date().toISOString(),
+        output: `Executed at ${new Date().toLocaleTimeString()}\n${executionOutput}`
+      };
+      await saveStudentSubmission(submission);
+    } catch (err: any) {
+      setOutput('Failed to run code.');
+      setError(err.message || String(err));
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   const getTypeColor = (type: string) => {
@@ -365,12 +317,15 @@ greet("Python Learner")`);
                 </div>
                 <Button 
                   onClick={handleRunCode}
-                  disabled={!isLectureActive}
+                  disabled={!isLectureActive || isRunning || isPyodideLoading()}
                   className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 border-0 shadow-lg disabled:opacity-50"
                   size="sm"
                 >
-                  <Play className="w-4 h-4 mr-2" />
-                  Run Code
+                  {isRunning || isPyodideLoading() ? (
+                    <span className="flex items-center"><svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Running...</span>
+                  ) : (
+                    <><Play className="w-4 h-4 mr-2" />Run Code</>
+                  )}
                 </Button>
               </CardHeader>
               <CardContent className="p-0">

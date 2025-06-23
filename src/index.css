@@ -99,3 +99,30 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Minimalistic global styles */
+body {
+  background: #f7f8fa;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #222;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+html {
+  background: #f7f8fa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: #f7f8fa;
+}
+::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 4px;
+}

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +9,7 @@ import StudentView from "./pages/StudentView";
 import TeacherView from "./pages/TeacherView";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import StudentDetail from "./pages/StudentDetail";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +37,14 @@ const App = () => (
                   <TeacherView />
                 </ProtectedRoute>
               } 
+            />
+            <Route 
+              path="/teacher/students/:studentId" 
+              element={
+                <ProtectedRoute requiredUserType="teacher">
+                  <StudentDetail />
+                </ProtectedRoute>
+              }
             />
             <Route path="*" element={<NotFound />} />
           </Routes>

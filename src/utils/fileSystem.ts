@@ -211,3 +211,36 @@ export const stopLectureSession = async () => {
     console.error('Error stopping lecture session:', error);
   }
 };
+
+// Upsert a student's session/online status
+export async function upsertStudentSession(studentId: string, studentName: string, sessionId: string) {
+  const { error } = await supabase
+    .from('student_sessions')
+    .upsert({
+      student_id: studentId,
+      student_name: studentName,
+      session_id: sessionId,
+      last_seen: new Date().toISOString(),
+    }, { onConflict: ['student_id', 'session_id'] });
+  return { error };
+}
+
+// Fetch all students active in a session within the last X minutes (default 2)
+export async function getOnlineStudents(sessionId: string, withinMinutes = 2) {
+  const since = new Date(Date.now() - withinMinutes * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from('student_sessions')
+    .select('*')
+    .eq('session_id', sessionId)
+    .gte('last_seen', since);
+  return { data, error };
+}
+
+// Fetch all students who have ever joined a session
+export async function getAllSessionStudents(sessionId: string) {
+  const { data, error } = await supabase
+    .from('student_sessions')
+    .select('*')
+    .eq('session_id', sessionId);
+  return { data, error };
+}
