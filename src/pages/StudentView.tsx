@@ -171,6 +171,8 @@ const StudentView = () => {
         return 'bg-green-50 text-green-700 border-green-200';
       case 'note':
         return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'code':
+        return 'bg-orange-50 text-orange-700 border-orange-200';
       default:
         return 'bg-gray-50 text-gray-700 border-gray-200';
     }
@@ -283,7 +285,12 @@ const StudentView = () => {
                                 {post.type}
                               </Badge>
                             </div>
-                            <PostContent content={post.content} voiceNote={post.voiceNote} />
+                            <PostContent 
+                              content={post.content} 
+                              voiceNote={post.voiceNote} 
+                              video={post.video}
+                              code={post.code}
+                            />
                             <div className="mt-3 pt-3 border-t border-gray-50">
                               <p className="text-xs text-gray-400">
                                 {new Date(post.timestamp).toLocaleString()}

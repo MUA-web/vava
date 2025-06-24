@@ -5,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Send, Trash2, Edit, MessageSquare } from 'lucide-react';
+import { Plus, Send, Trash2, Edit, MessageSquare, Code } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/RichTextEditor';
 import PostContent from '@/components/PostContent';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import VoiceNote from '@/components/VoiceNote';
+import CodeEditor from '@/components/CodeEditor';
 import { getTeacherPosts, saveTeacherPost } from '@/utils/fileSystem';
 import { supabase } from '@/integrations/supabase/client';
 import VideoUpload from '@/components/VideoUpload';
@@ -28,15 +29,22 @@ interface VideoData {
   transcript?: string;
 }
 
+interface CodeData {
+  code: string;
+  language: 'python' | 'javascript' | 'html' | 'css';
+  description?: string;
+}
+
 interface Post {
   id: string;
   title: string;
   content: string;
-  type: 'announcement' | 'assignment' | 'note';
+  type: 'announcement' | 'assignment' | 'note' | 'code';
   timestamp: string;
   author: string;
   voiceNote?: VoiceNoteData;
   video?: VideoData;
+  code?: CodeData;
 }
 
 const PostCreator = () => {
@@ -46,9 +54,10 @@ const PostCreator = () => {
   const [formData, setFormData] = useState<{
     title: string;
     content: string;
-    type: 'announcement' | 'assignment' | 'note';
+    type: 'announcement' | 'assignment' | 'note' | 'code';
     voiceNote?: VoiceNoteData;
     video?: VideoData;
+    code?: CodeData;
   }>({
     title: '',
     content: '',
@@ -84,7 +93,7 @@ const PostCreator = () => {
     // Type cast the posts to ensure proper TypeScript typing
     const typedPosts: Post[] = fetchedPosts.map(post => ({
       ...post,
-      type: post.type as 'announcement' | 'assignment' | 'note'
+      type: post.type as 'announcement' | 'assignment' | 'note' | 'code'
     }));
     setPosts(typedPosts);
   };
@@ -109,6 +118,17 @@ const PostCreator = () => {
     }));
   };
 
+  const handleCodeChange = (code: string) => {
+    setFormData(prev => ({
+      ...prev,
+      code: {
+        code,
+        language: 'python',
+        description: prev.code?.description || ''
+      }
+    }));
+  };
+
   const removeVoiceNote = () => {
     setFormData(prev => {
       const { voiceNote, ...rest } = prev;
@@ -123,76 +143,98 @@ const PostCreator = () => {
     });
   };
 
+  const removeCode = () => {
+    setFormData(prev => {
+      const { code, ...rest } = prev;
+      return rest;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title.trim() || !formData.content.trim()) {
+    if (!formData.title.trim()) {
       toast({
         title: "Error",
-        description: "Please fill in both title and content",
+        description: "Please enter a title for your post",
         variant: "destructive"
       });
       return;
     }
 
-    const teacher = JSON.parse(localStorage.getItem('currentTeacher') || '{}');
-    
-    if (editingPost) {
-      // Update existing post in Supabase
-      try {
+    if (formData.type === 'code' && (!formData.code?.code || !formData.code.code.trim())) {
+      toast({
+        title: "Error",
+        description: "Please enter some code for your code example",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const teacher = await supabase.auth.getUser();
+      
+      const postData = {
+        title: formData.title,
+        content: formData.content,
+        type: formData.type,
+        author: teacher.data.user?.user_metadata?.name || teacher.data.user?.email || 'Teacher',
+        voice_note_url: formData.voiceNote?.audioUrl || null,
+        voice_note_duration: formData.voiceNote?.duration || null,
+        video_url: formData.video?.videoUrl || null,
+        video_duration: formData.video?.duration || null,
+        video_filename: formData.video?.fileName || null,
+        video_filesize: formData.video?.fileSize || null,
+        video_transcript: formData.video?.transcript || null,
+        code_content: formData.code?.code || null,
+        code_language: formData.code?.language || null,
+        code_description: formData.code?.description || null,
+      };
+
+      if (editingPost) {
+        // Update existing post in Supabase
         const { error } = await supabase
           .from('posts')
-          .update({
-            title: formData.title,
-            content: formData.content,
-            type: formData.type,
-            voice_note_url: formData.voiceNote?.audioUrl || null,
-            voice_note_duration: formData.voiceNote?.duration || null,
-            video_url: formData.video?.videoUrl || null,
-            video_duration: formData.video?.duration || null,
-            video_filename: formData.video?.fileName || null,
-            video_filesize: formData.video?.fileSize || null,
-            video_transcript: formData.video?.transcript || null,
-            updated_at: new Date().toISOString()
-          })
+          .update(postData)
           .eq('id', editingPost.id);
 
         if (error) throw error;
 
-        setEditingPost(null);
         toast({
           title: "Post Updated",
           description: "Your post has been updated successfully"
         });
-      } catch (error) {
-        console.error('Error updating post:', error);
+      } else {
+        // Create new post in Supabase
+        // Note: saveTeacherPost expects a slightly different object structure
+        const newPost = {
+          title: formData.title,
+          content: formData.content,
+          type: formData.type,
+          author: teacher.data.user?.user_metadata?.name || teacher.data.user?.email || 'Teacher',
+          voiceNote: formData.voiceNote,
+          video: formData.video,
+          code: formData.code
+        };
+        await saveTeacherPost(newPost);
         toast({
-          title: "Error",
-          description: "Failed to update post",
-          variant: "destructive"
+          title: "Post Created",
+          description: "Your post has been published successfully"
         });
       }
-    } else {
-      // Create new post in Supabase
-      const newPost = {
-        title: formData.title,
-        content: formData.content,
-        type: formData.type,
-        author: teacher.username || 'Teacher',
-        voiceNote: formData.voiceNote,
-        video: formData.video
-      };
-      
-      await saveTeacherPost(newPost);
+
+      setFormData({ title: '', content: '', type: 'announcement' });
+      setIsCreating(false);
+      setEditingPost(null);
+      loadPosts(); // Refresh the posts list
+    } catch (error) {
+      console.error('Error saving post:', error);
       toast({
-        title: "Post Created",
-        description: "Your post has been published successfully"
+        title: "Error",
+        description: "Failed to save post. Please try again.",
+        variant: "destructive"
       });
     }
-
-    setFormData({ title: '', content: '', type: 'announcement' });
-    setIsCreating(false);
-    loadPosts(); // Refresh the posts list
   };
 
   const handleEdit = (post: Post) => {
@@ -201,7 +243,8 @@ const PostCreator = () => {
       content: post.content,
       type: post.type,
       voiceNote: post.voiceNote,
-      video: post.video
+      video: post.video,
+      code: post.code
     });
     setEditingPost(post);
     setIsCreating(true);
@@ -245,6 +288,8 @@ const PostCreator = () => {
         return 'bg-green-100 text-green-800';
       case 'note':
         return 'bg-purple-100 text-purple-800';
+      case 'code':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -268,7 +313,7 @@ const PostCreator = () => {
             )}
           </CardTitle>
           <CardDescription>
-            {editingPost ? 'Update your existing post' : 'Create announcements, assignments, or notes for students'}
+            {editingPost ? 'Update your existing post' : 'Create announcements, assignments, notes, or code examples for students'}
           </CardDescription>
         </CardHeader>
         
@@ -294,22 +339,76 @@ const PostCreator = () => {
                     value={formData.type}
                     onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Select post type"
                   >
                     <option value="announcement">Announcement</option>
                     <option value="assignment">Assignment</option>
                     <option value="note">Note</option>
+                    <option value="code">Code Example</option>
                   </select>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="content">Content</Label>
-                <RichTextEditor
-                  value={formData.content}
-                  onChange={(content) => setFormData(prev => ({ ...prev, content }))}
-                  placeholder="Write your post content here..."
-                />
-              </div>
+              {/* Code Editor Section */}
+              {formData.type === 'code' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-2">
+                      <Code className="w-4 h-4" />
+                      Code Example
+                    </Label>
+                    {formData.code && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={removeCode}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Remove Code
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="border rounded-lg overflow-hidden">
+                    <CodeEditor
+                      value={formData.code?.code || ''}
+                      onChange={handleCodeChange}
+                      language="python"
+                      showToolbar={true}
+                      placeholder="Write your Python code example here..."
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="code-description">Code Description (Optional)</Label>
+                    <Input
+                      id="code-description"
+                      value={formData.code?.description || ''}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        code: {
+                          ...prev.code!,
+                          description: e.target.value
+                        }
+                      }))}
+                      placeholder="Explain what this code does..."
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Rich Text Content (for non-code posts or additional content) */}
+              {formData.type !== 'code' && (
+                <div className="space-y-2">
+                  <Label htmlFor="content">Content</Label>
+                  <RichTextEditor
+                    value={formData.content}
+                    onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+                    placeholder="Write your post content here..."
+                  />
+                </div>
+              )}
 
               {/* Video Upload Section */}
               <div className="space-y-3">
@@ -424,6 +523,25 @@ const PostCreator = () => {
                         </Button>
                       </div>
                     </div>
+                    
+                    {/* Code Display */}
+                    {post.type === 'code' && post.code && (
+                      <div className="mb-4">
+                        <div className="border rounded-lg overflow-hidden">
+                          <CodeEditor
+                            value={post.code.code}
+                            onChange={() => {}} // Read-only
+                            disabled={true}
+                            showToolbar={false}
+                          />
+                        </div>
+                        {post.code.description && (
+                          <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                            {post.code.description}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     
                     <PostContent 
                       content={post.content} 

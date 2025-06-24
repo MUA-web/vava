@@ -350,7 +350,6 @@ const CodeEditor = ({ value, onChange, disabled = false }: CodeEditorProps) => {
         spellCheck={false}
         aria-label="Python code editor"
       />
-      
       {/* Line numbers */}
       <div className="absolute left-0 top-0 w-12 h-full bg-gradient-to-b from-gray-200 via-gray-100 to-gray-50 border-r border-gray-300 p-4 font-mono text-xs text-gray-400 select-none overflow-hidden flex flex-col items-end">
         {value.split('\n').map((_, index) => (

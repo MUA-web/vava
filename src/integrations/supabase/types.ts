@@ -55,6 +55,9 @@ export type Database = {
           video_url: string | null
           voice_note_duration: number | null
           voice_note_url: string | null
+          code_content: string | null
+          code_language: string | null
+          code_description: string | null
         }
         Insert: {
           author: string
@@ -71,6 +74,9 @@ export type Database = {
           video_url?: string | null
           voice_note_duration?: number | null
           voice_note_url?: string | null
+          code_content?: string | null
+          code_language?: string | null
+          code_description?: string | null
         }
         Update: {
           author?: string
@@ -87,6 +93,9 @@ export type Database = {
           video_url?: string | null
           voice_note_duration?: number | null
           voice_note_url?: string | null
+          code_content?: string | null
+          code_language?: string | null
+          code_description?: string | null
         }
         Relationships: []
       }

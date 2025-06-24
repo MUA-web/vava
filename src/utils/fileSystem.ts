@@ -134,6 +134,11 @@ export const getTeacherPosts = async () => {
         fileName: post.video_filename || 'video.mp4',
         fileSize: post.video_filesize || 0,
         transcript: post.video_transcript || undefined
+      } : undefined,
+      code: post.code_content ? {
+        code: post.code_content,
+        language: post.code_language || 'python',
+        description: post.code_description || undefined
       } : undefined
     })) || [];
   } catch (error) {
@@ -157,7 +162,10 @@ export const saveTeacherPost = async (post: any) => {
         video_duration: post.video?.duration || null,
         video_filename: post.video?.fileName || null,
         video_filesize: post.video?.fileSize || null,
-        video_transcript: post.video?.transcript || null
+        video_transcript: post.video?.transcript || null,
+        code_content: post.code?.code || null,
+        code_language: post.code?.language || null,
+        code_description: post.code?.description || null
       });
 
     if (error) {

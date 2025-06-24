@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -118,11 +117,12 @@ const LectureManager = () => {
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${isSessionActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
               <div>
-                <p className="font-medium">
-                  Session Status: <Badge variant={isSessionActive ? "default" : "secondary"}>
+                <div className="font-medium flex items-center gap-2">
+                  <span>Session Status:</span>
+                  <Badge variant={isSessionActive ? "default" : "secondary"}>
                     {isSessionActive ? 'Active' : 'Inactive'}
                   </Badge>
-                </p>
+                </div>
                 {isSessionActive && lectureStatus.remainingTime && (
                   <p className="text-sm text-gray-600">
                     Time remaining: {lectureStatus.remainingTime}
