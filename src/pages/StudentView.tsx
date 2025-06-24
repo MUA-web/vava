@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { runPython, injectPyodideScript, isPyodideLoading } from '@/utils/pyodideRunner';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const StudentView = () => {
   const { user, signOut } = useAuth();
@@ -200,8 +201,8 @@ const StudentView = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-muted/40">
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-2">
+    <div className="flex flex-col min-h-screen bg-white px-2 sm:px-4 md:px-8 overflow-x-hidden">
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-0 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-0 py-2 mb-4">
         <div className="flex items-center gap-2">
             <Code className="w-6 h-6 text-primary" />
             <h1 className="text-xl font-semibold">Student Studio</h1>
@@ -220,7 +221,7 @@ const StudentView = () => {
       </header>
       
       {!isLectureActive && (
-        <div className="px-4 sm:px-6">
+        <div className="px-0 sm:px-0 mb-6">
             <Card className="sm:col-span-2 border-yellow-500/50 bg-yellow-50 dark:bg-yellow-900/20">
               <CardHeader className="pb-2 flex-row items-start gap-3 space-y-0">
                   <div className="p-2 rounded-md bg-yellow-500/10">
@@ -237,7 +238,98 @@ const StudentView = () => {
         </div>
       )}
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 sm:p-6 h-[calc(100vh-4rem)]">
+      {/* Mobile Tabbed Layout */}
+      <div className="block lg:hidden flex-1 mb-6">
+        <Tabs defaultValue="studio" className="w-full">
+          <TabsList className="w-full flex justify-center mb-2 text-base sm:text-lg">
+            <TabsTrigger value="studio" className="flex-1">Studio</TabsTrigger>
+            <TabsTrigger value="feed" className="flex-1">Feed</TabsTrigger>
+          </TabsList>
+          <TabsContent value="studio">
+            <div className="flex flex-col gap-4 p-2">
+              <div className="w-full max-w-full min-h-[200px] h-[200px] sm:min-h-[300px] sm:h-[300px] bg-white">
+                <div className="flex flex-row items-center gap-3 flex-shrink-0 px-4 pt-4">
+                  <Code className="w-5 h-5 text-primary" />
+                  <h2 className="text-base sm:text-xl font-bold mb-2">Code Editor</h2>
+                  <div className="ml-auto">
+                    <Button
+                      onClick={handleRunCode}
+                      disabled={isRunning || !isLectureActive}
+                      className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-bold py-2 px-5 text-base rounded-full shadow transition-all duration-200 flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isRunning ? (
+                        <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                        </svg>
+                      ) : (
+                        <Play className="w-5 h-5" />
+                      )}
+                      <span>{isRunning ? 'Running...' : 'Run Code'}</span>
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex-1 h-full p-0">
+                  <CodeEditor
+                    value={code}
+                    onChange={(newCode) => setCode(newCode || '')}
+                    language="python"
+                    readOnly={!isLectureActive}
+                    style={{ height: '100%', minHeight: '300px', fontFamily: 'monospace', borderRadius: '0 0 0.5rem 0.5rem' }}
+                  />
+                </div>
+                {(output || error) && (
+                  <div className="border-t bg-black text-white text-sm font-mono p-3 min-h-[60px] max-h-40 overflow-auto rounded-b-lg mt-2">
+                    <Terminal output={output} error={error} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+          <TabsContent value="feed">
+            <Card className="flex-1 rounded-lg shadow-sm border bg-white w-full max-w-full mb-4">
+              <CardHeader className="flex flex-row items-center gap-3">
+                <Rss className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold">Live Updates</h2>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[calc(100vh-16rem)]">
+                  <div className="space-y-4">
+                    {teacherPosts.length > 0 ? (
+                      teacherPosts.map((post) => (
+                        <Card key={post.id} className="overflow-hidden">
+                          <CardHeader className="p-4">
+                            <div className="flex items-center justify-between">
+                              <Badge className={cn(getTypeColor(post.type), 'capitalize font-medium')}>
+                                {post.type}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {formatTime(post.timestamp)}
+                              </span>
+                            </div>
+                            <CardTitle className="text-base pt-2">{post.title}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-4 pb-4">
+                            <PostContent {...post} contentClassName="h-64" />
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <div className="text-center text-muted-foreground py-12">
+                        <p>No announcements yet.</p>
+                        <p className="text-sm">Updates from your teacher will appear here.</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Desktop Layout */}
+      <main className="hidden lg:grid flex-1 grid-cols-1 lg:grid-cols-3 gap-6 p-4 sm:p-6 h-[calc(100vh-4rem)]">
         {/* Left Column: Live Updates */}
         <div className="lg:col-span-1 flex flex-col gap-6 h-full">
           <Card className="flex-1">
@@ -263,7 +355,7 @@ const StudentView = () => {
                           <CardTitle className="text-base pt-2">{post.title}</CardTitle>
                         </CardHeader>
                         <CardContent className="px-4 pb-4">
-                            <PostContent {...post} contentClassName="h-64" />
+                          <PostContent {...post} contentClassName="h-64" />
                         </CardContent>
                       </Card>
                     ))
@@ -281,40 +373,43 @@ const StudentView = () => {
 
         {/* Right Column: Code Editor and Terminal */}
         <div className="lg:col-span-2 flex flex-col gap-6 h-full">
-          <Card className="flex-1 flex flex-col min-h-[70vh]">
-            <CardHeader className="flex flex-row items-center gap-3 flex-shrink-0">
-               <Code className="w-5 h-5 text-primary" />
-               <h2 className="text-lg font-semibold">Code Editor</h2>
-               <div className="ml-auto">
-                 <Button onClick={handleRunCode} disabled={isRunning || !isLectureActive}>
-                   {isRunning ? 'Running...' : <><Play className="w-4 h-4 mr-2" /> Run Code</>}
-                 </Button>
-               </div>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col p-0">
-              <div className="flex-1 h-full">
-                <CodeEditor
-                  value={code}
-                  onChange={(newCode) => setCode(newCode || '')}
-                  language="python"
-                  readOnly={!isLectureActive}
-                  style={{
-                    height: '100%',
-                    minHeight: '600px',
-                    fontFamily: 'monospace',
-                  }}
-                />
+          <div className="w-full max-w-full min-h-[300px] h-[300px] md:min-h-[400px] md:h-[400px] rounded-lg shadow-sm border bg-white mb-4">
+            <div className="flex flex-row items-center gap-3 flex-shrink-0 px-6 pt-6">
+              <Code className="w-5 h-5 text-primary" />
+              <h2 className="text-base md:text-xl font-bold mb-2">Code Editor</h2>
+              <div className="ml-auto">
+                <Button
+                  onClick={handleRunCode}
+                  disabled={isRunning || !isLectureActive}
+                  className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-bold py-2 px-5 text-base rounded-full shadow transition-all duration-200 flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isRunning ? (
+                    <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                    </svg>
+                  ) : (
+                    <Play className="w-5 h-5" />
+                  )}
+                  <span>{isRunning ? 'Running...' : 'Run Code'}</span>
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-          <Card className="h-[200px] flex flex-col">
-            <CardHeader>
-              <CardTitle>Terminal</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1">
+            </div>
+            <div className="flex-1 h-full p-0">
+              <CodeEditor
+                value={code}
+                onChange={(newCode) => setCode(newCode || '')}
+                language="python"
+                readOnly={!isLectureActive}
+                style={{ height: '100%', minHeight: '600px', fontFamily: 'monospace', borderRadius: '0 0 0.5rem 0.5rem' }}
+              />
+            </div>
+            {(output || error) && (
+              <div className="border-t bg-black text-white text-sm font-mono p-3 min-h-[80px] max-h-56 overflow-auto rounded-b-lg mt-2">
                 <Terminal output={output} error={error} />
-            </CardContent>
-          </Card>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

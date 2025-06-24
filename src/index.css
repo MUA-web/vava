@@ -143,3 +143,8 @@ html {
 .animate-gradient-xy {
   animation: gradient-xy 15s ease infinite;
 }
+
+/* Stronger: Force Monaco Editor and all children to dark background */
+.monaco-editor, .monaco-editor * {
+  background: #1e1e1e !important;
+}
