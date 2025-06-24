@@ -128,3 +128,18 @@ html {
   background: #e0e0e0;
   border-radius: 4px;
 }
+
+@keyframes gradient-xy {
+  0%, 100% {
+    background-size: 400% 400%;
+    background-position: top center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: bottom center;
+  }
+}
+
+.animate-gradient-xy {
+  animation: gradient-xy 15s ease infinite;
+}

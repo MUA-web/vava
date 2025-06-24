@@ -1,220 +1,527 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, Users, Code, Clock, Monitor, FileText, ArrowRight } from 'lucide-react';
+import { motion, useAnimation, useInView } from 'framer-motion';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import { GraduationCap, Users, Code, Clock, Monitor, FileText, ArrowRight, BookOpen, Video, TerminalSquare, Rocket, UserPlus, Presentation, LogIn, PenTool, Twitter, Github, Linkedin, MessageSquare, VideoIcon, Code2Icon } from 'lucide-react';
 import StudentAuth from '@/components/StudentAuth';
 import TeacherAuth from '@/components/TeacherAuth';
+import Typewriter from 'typewriter-effect';
+import { AnimatePresence } from 'framer-motion';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
+
+const AnimatedSection = ({ children }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  const mainControls = useAnimation();
+
+  useEffect(() => {
+    if (isInView) {
+      mainControls.start("visible");
+    }
+  }, [isInView]);
+
+  return (
+    <motion.div
+      ref={ref}
+      variants={{
+        hidden: { opacity: 0, y: 75 },
+        visible: { opacity: 1, y: 0 },
+      }}
+      initial="hidden"
+      animate={mainControls}
+      transition={{ duration: 0.5, delay: 0.25 }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const interactiveSteps = [
+  {
+    id: "create",
+    title: "Launch a Classroom Instantly",
+    description: "No complex setup. Create a new, secure classroom session with a single click. Your collaborative space is ready when you are.",
+    icon: <Presentation />,
+    visual: (
+      <div className="w-full h-full bg-slate-200 p-4 rounded-lg flex flex-col">
+        <div className="font-mono text-sm text-slate-500">
+          <p>&gt; vava create:classroom "CS101 Intro to Python"</p>
+          <p className="text-green-500">Success! Classroom "CS101 Intro to Python" created.</p>
+        </div>
+        <div className="mt-4 p-4 bg-white rounded shadow-inner flex-1 flex flex-col justify-center items-center">
+            <h3 className="text-xl font-bold text-slate-700">CS101 Intro to Python</h3>
+            <p className="text-sm text-slate-500">Your session is now live.</p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "share",
+    title: "Share & Edit Code in Real-Time",
+    description: "Utilize the power of the Monaco Editor (the heart of VS Code) to write, edit, and run code live. Students see every keystroke, making for a truly interactive lesson.",
+    icon: <Code2Icon />,
+    visual: (
+      <div className="w-full h-full bg-gray-800 p-4 rounded-lg flex flex-col font-mono text-sm">
+        <div className="flex-1 text-white">
+          <span className="text-blue-400">def</span> <span className="text-yellow-300">hello_vava</span>():<br/>
+          &nbsp;&nbsp;message = <span className="text-green-400">"Hello, Interactive Classroom!"</span><br/>
+          &nbsp;&nbsp;<span className="text-blue-400">print</span>(message)
+        </div>
+        <div className="mt-2 p-2 bg-black rounded text-green-400 text-xs">
+            &gt; Hello, Interactive Classroom!
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "video",
+    title: "Integrate Seamless Video Lessons",
+    description: "No need to juggle multiple apps. Embed video lessons directly into your posts. Perfect for pre-recorded lectures, tutorials, or supplementary material.",
+    icon: <VideoIcon />,
+    visual: (
+       <div className="w-full h-full bg-slate-900 p-4 rounded-lg flex flex-col items-center justify-center text-white">
+          <VideoIcon className="w-16 h-16 text-slate-500 mb-4"/>
+          <div className="w-full h-4 bg-slate-700 rounded-full">
+            <div className="w-1/2 h-full bg-indigo-500 rounded-full"></div>
+          </div>
+          <p className="text-sm mt-3 text-slate-400">Lecture 5: Asynchronous Functions</p>
+      </div>
+    ),
+  },
+   {
+    id: "collab",
+    title: "Collaborate with Rich Content",
+    description: "Go beyond just code. Create comprehensive posts with rich text, formatted notes, images, and voice recordings to create a multi-faceted learning experience.",
+    icon: <MessageSquare />,
+    visual: (
+      <div className="w-full h-full bg-white p-4 rounded-lg flex flex-col">
+        <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-2">Weekly Announcement</h3>
+        <p className="text-sm text-slate-600">Don't forget to review the notes on <span className="font-semibold text-indigo-600">Big O notation</span> before our next session!</p>
+        <div className="mt-4 p-3 bg-slate-100 rounded-lg text-xs text-slate-500">
+          Attached: Big_O_Cheatsheet.pdf
+        </div>
+      </div>
+    ),
+  },
+];
+
+const testimonials = [
+    {
+        quote: "Vava Classroom has transformed my remote teaching. The real-time code editor is a game-changer!",
+        name: "Mr. Bello",
+        role: "CS Teacher",
+        borderColor: "border-indigo-500",
+        textColor: "text-indigo-600"
+    },
+    {
+        quote: "I can finally code along with my instructor without screen sharing lag. It's so much more interactive.",
+        name: "Aisha",
+        role: "University Student",
+        borderColor: "border-green-500",
+        textColor: "text-green-600"
+    },
+    {
+        quote: "The platform is intuitive, stable, and has all the features I need to manage my programming course.",
+        name: "Dr. Eze",
+        role: "Bootcamp Instructor",
+        borderColor: "border-purple-500",
+        textColor: "text-purple-600"
+    },
+    {
+        quote: "The ability to drop in voice notes and video clips directly into the lesson feed is fantastic for asynchronous learning.",
+        name: "Sofia",
+        role: "EdTech Coordinator",
+        borderColor: "border-sky-500",
+        textColor: "text-sky-600"
+    }
+];
 
 const Index = () => {
   const [selectedRole, setSelectedRole] = useState<'student' | 'teacher' | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [activeLink, setActiveLink] = useState('');
+  const [activeStep, setActiveStep] = useState(interactiveSteps[0].id);
 
-  if (selectedRole === 'student') {
-    return <StudentAuth onBack={() => setSelectedRole(null)} />;
-  }
+  const sectionRefs = {
+    features: useRef(null),
+    testimonials: useRef(null),
+    faq: useRef(null),
+  };
 
-  if (selectedRole === 'teacher') {
-    return <TeacherAuth onBack={() => setSelectedRole(null)} />;
-  }
+  const stepRefs = {
+    create: useRef(null),
+    share: useRef(null),
+    video: useRef(null),
+    collab: useRef(null),
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Handle navbar background change
+      setScrolled(window.scrollY > 10);
+
+      // Handle active link highlighting
+      let currentSection = '';
+      for (const [id, ref] of Object.entries(sectionRefs)) {
+        const section = ref.current;
+        if (section) {
+          const sectionTop = section.offsetTop - 100; //-100 to trigger a bit earlier
+          const sectionBottom = sectionTop + section.offsetHeight;
+          if (window.scrollY >= sectionTop && window.scrollY < sectionBottom) {
+            currentSection = id;
+          }
+        }
+      }
+      setActiveLink(currentSection);
+
+      // Handle interactive section steps
+      let currentStep = activeStep;
+      for (const [id, ref] of Object.entries(stepRefs)) {
+        const section = ref.current;
+        if (section) {
+          const sectionTop = section.offsetTop - window.innerHeight / 2;
+          const sectionBottom = sectionTop + section.offsetHeight;
+           if (window.scrollY >= sectionTop && window.scrollY < sectionBottom) {
+            currentStep = id;
+          }
+        }
+      }
+      setActiveStep(currentStep);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [sectionRefs, activeStep, stepRefs]);
+
+  const handleRoleSelect = (role: 'student' | 'teacher') => {
+    setSelectedRole(role);
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedRole(null);
+  };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Modern Nav Bar */}
-      <nav className="relative z-10 flex items-center justify-between px-8 py-4 bg-white/90 shadow-sm">
+    <>
+    <div className="flex flex-col min-h-screen bg-gray-50 text-gray-800">
+      {/* Navbar */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm' : 'bg-transparent'}`}>
         <div className="flex items-center gap-2">
-          <Code className="h-7 w-7 text-blue-700" />
-          <span className="text-2xl font-bold text-blue-700 tracking-tight">Vava Classroom</span>
+          <Code className={`h-7 w-7 transition-colors ${scrolled ? 'text-indigo-600' : 'text-white'}`} />
+          <span className={`text-2xl font-bold tracking-tight transition-colors ${scrolled ? 'text-indigo-600' : 'text-white'}`}>Vava Classroom</span>
         </div>
-        <div className="hidden md:flex gap-8 text-gray-700 font-medium">
-          <a href="#about" className="hover:text-blue-700 transition">About</a>
-          <a href="#features" className="hover:text-blue-700 transition">Features</a>
-          <a href="#contact" className="hover:text-blue-700 transition">Contact</a>
+        <div className="hidden md:flex gap-6 font-medium">
+          <a href="#features" className={`transition-all ${activeLink === 'features' ? 'text-indigo-600 font-semibold' : (scrolled ? 'text-gray-600' : 'text-white')} hover:text-indigo-600`}>Features</a>
+          <a href="#testimonials" className={`transition-all ${activeLink === 'testimonials' ? 'text-indigo-600 font-semibold' : (scrolled ? 'text-gray-600' : 'text-white')} hover:text-indigo-600`}>Testimonials</a>
+          <a href="#faq" className={`transition-all ${activeLink === 'faq' ? 'text-indigo-600 font-semibold' : (scrolled ? 'text-gray-600' : 'text-white')} hover:text-indigo-600`}>FAQ</a>
         </div>
-        <Button className="bg-blue-700 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-800 transition">Free Assessment</Button>
+        <Button onClick={() => handleRoleSelect('teacher')} className="bg-indigo-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-105">
+          Get Started
+        </Button>
       </nav>
 
-      {/* Wavy Header Background */}
-      <div className="relative bg-blue-700">
-        <svg className="absolute top-0 left-0 w-full h-32 md:h-40" viewBox="0 0 1440 320" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path fill="#2563eb" fillOpacity="1" d="M0,160L60,170.7C120,181,240,203,360,197.3C480,192,600,160,720,154.7C840,149,960,171,1080,181.3C1200,192,1320,192,1380,192L1440,192L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,60,0L0,0Z" />
-        </svg>
-        <div className="relative z-10 flex flex-col items-center justify-center pt-16 pb-24 text-center text-white">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 drop-shadow">Empowering Teachers. Inspiring Students.</h1>
-          <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow">A modern platform for interactive learning, live coding, and seamless classroom communication.</p>
+      {/* Animated Gradient Hero Section */}
+      <header className="relative flex flex-col items-center justify-center min-h-screen pt-20 text-center text-white overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-500 animate-gradient-xy"></div>
+        <div className="relative z-10 p-4">
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-4 drop-shadow-xl">
+            <Typewriter
+              options={{
+                strings: [
+                  'The Future of Interactive Learning is Here',
+                  'Empower Your Classroom with Vava',
+                  'Code, Collaborate, and Create Together',
+                ],
+                autoStart: true,
+                loop: true,
+                delay: 50,
+                deleteSpeed: 30,
+              }}
+            />
+          </h1>
+          <p className="text-lg md:text-xl mb-8 max-w-3xl mx-auto drop-shadow-lg">
+            An all-in-one platform for live coding sessions, real-time collaboration, and seamless classroom management. Built for the modern educator and student.
+          </p>
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <Button className="bg-white text-blue-700 font-bold px-8 py-3 rounded-lg shadow hover:bg-blue-50 transition" onClick={() => setSelectedRole('student')}>
-              I'm a Student
+            <Button size="lg" className="bg-white text-indigo-600 font-bold px-8 py-3 rounded-full shadow-xl hover:bg-gray-100 transition-transform transform hover:scale-105" onClick={() => handleRoleSelect('student')}>
+              Join as a Student
             </Button>
-            <Button className="bg-blue-600 text-white font-bold px-8 py-3 rounded-lg shadow hover:bg-blue-800 transition" onClick={() => setSelectedRole('teacher')}>
-              I'm a Teacher
+            <Button size="lg" className="bg-transparent border-2 border-white text-white font-bold px-8 py-3 rounded-full shadow-xl hover:bg-white/20 transition-transform transform hover:scale-105" onClick={() => handleRoleSelect('teacher')}>
+              Lead as a Teacher
             </Button>
           </div>
         </div>
-      </div>
-
-      {/* Role Selection Section - well organized */}
-      <main className="flex-1 flex flex-col items-center justify-center text-center px-4 mt-[-60px]">
-        <section className="w-full max-w-3xl py-8">
-          <h2 className="text-3xl font-bold text-blue-700 mb-2">Get Started</h2>
-          <p className="text-gray-600 mb-8">Choose your role to access the platform</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-blue-100" onClick={() => setSelectedRole('student')}>
-              <CardHeader className="items-center text-center">
-                <div className="p-3 rounded-full bg-blue-100 mb-4 group-hover:bg-blue-600 transition-colors duration-300">
-                  <GraduationCap className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors duration-300" />
-                </div>
-                <CardTitle className="text-xl">I'm a Student</CardTitle>
-                <CardDescription>Join a session and start coding.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full" onClick={() => setSelectedRole('student')}>
-                  Enter Session <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-            <Card className="group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-blue-100" onClick={() => setSelectedRole('teacher')}>
-              <CardHeader className="items-center text-center">
-                <div className="p-3 rounded-full bg-blue-100 mb-4 group-hover:bg-blue-600 transition-colors duration-300">
-                  <Users className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors duration-300" />
-                </div>
-                <CardTitle className="text-xl">I'm a Teacher</CardTitle>
-                <CardDescription>Manage your class and students.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="secondary" className="w-full" onClick={() => setSelectedRole('teacher')}>
-                  Open Dashboard <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
+      </header>
+      
+      {/* Features Section */}
+      <section id="features" ref={sectionRefs.features} className="w-full max-w-5xl mx-auto py-20 px-4">
+        <AnimatedSection>
+          <h2 className="text-4xl font-bold text-center mb-12">Why Vava Classroom?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div className="p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow">
+              <div className="p-4 inline-block rounded-full bg-indigo-100 mb-4">
+                <TerminalSquare className="w-10 h-10 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Live Code Editing</h3>
+              <p>Share and edit code in real-time with Monaco Editor, the engine behind VS Code.</p>
+            </div>
+            <div className="p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow">
+              <div className="p-4 inline-block rounded-full bg-indigo-100 mb-4">
+                <Video className="w-10 h-10 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Video Integration</h3>
+              <p>Embed video lessons directly into your posts for a complete learning experience.</p>
+            </div>
+            <div className="p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow">
+              <div className="p-4 inline-block rounded-full bg-indigo-100 mb-4">
+                <BookOpen className="w-10 h-10 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Rich Content Creation</h3>
+              <p>Create engaging posts with rich text, images, and embedded content.</p>
+            </div>
           </div>
-        </section>
+        </AnimatedSection>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="how-it-works" className="w-full py-20 px-4 bg-gray-100">
+          <div className="max-w-6xl mx-auto text-center mb-16">
+              <h2 className="text-4xl font-bold mb-4">See Vava in Action</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">From creating a class to collaborating in real-time, see how our platform transforms the educational experience step-by-step.</p>
+          </div>
+          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-start">
+              {/* Left "Sticky" Column */}
+              <div className="sticky top-28 h-[30rem] hidden md:block">
+                  <div className="relative w-full h-full bg-white rounded-2xl shadow-2xl border p-2">
+                       <div className="absolute top-4 left-4 flex gap-1.5">
+                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                          <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      </div>
+                      <div className="w-full h-full pt-8">
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                              key={activeStep}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -20 }}
+                              transition={{ duration: 0.3 }}
+                              className="w-full h-full"
+                          >
+                              {interactiveSteps.find(s => s.id === activeStep)?.visual}
+                          </motion.div>
+                        </AnimatePresence>
+                      </div>
+                  </div>
+              </div>
+              {/* Right Scrolling Column */}
+              <div className="space-y-24 md:space-y-48">
+                  {interactiveSteps.map((step) => (
+                      <div key={step.id} ref={stepRefs[step.id]} className="md:min-h-[20rem] text-left">
+                          {/* Mobile-only Visual */}
+                          <div className="block md:hidden mb-10">
+                              <AnimatedSection>
+                                <div className="relative w-full h-96 bg-white rounded-2xl shadow-2xl border p-2">
+                                  <div className="absolute top-4 left-4 flex gap-1.5">
+                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                  </div>
+                                  <div className="w-full h-full pt-8">
+                                    {step.visual}
+                                  </div>
+                                </div>
+                              </AnimatedSection>
+                          </div>
+
+                          {/* Text content for all sizes */}
+                          <div className="p-4 inline-block rounded-full bg-indigo-100 mb-4 ring-8 ring-indigo-50">
+                              {step.icon}
+                          </div>
+                          <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
+                          <p className="text-gray-600">{step.description}</p>
+                      </div>
+                  ))}
+              </div>
+          </div>
+      </section>
+
+      {/* Role Selection Section */}
+      <main className="flex-1 flex flex-col items-center justify-center text-center px-4 bg-gray-100 py-16">
+        <AnimatedSection>
+          <section className="w-full max-w-4xl">
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">Get Started on Your Journey</h2>
+            <p className="text-gray-600 mb-10">Choose your role to log in or sign up.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <Card className="group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer border-2 border-transparent hover:border-indigo-500" onClick={() => handleRoleSelect('student')}>
+                <CardHeader className="items-center text-center">
+                  <div className="p-4 rounded-full bg-indigo-100 mb-4 transition-colors duration-300">
+                    <GraduationCap className="w-10 h-10 text-indigo-600" />
+                  </div>
+                  <CardTitle className="text-2xl font-bold">Student</CardTitle>
+                  <CardDescription>Join a classroom, learn, and collaborate.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">
+                    Enter Session <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card className="group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer border-2 border-transparent hover:border-indigo-500" onClick={() => handleRoleSelect('teacher')}>
+                <CardHeader className="items-center text-center">
+                  <div className="p-4 rounded-full bg-indigo-100 mb-4 transition-colors duration-300">
+                    <Users className="w-10 h-10 text-indigo-600" />
+                  </div>
+                  <CardTitle className="text-2xl font-bold">Teacher</CardTitle>
+                  <CardDescription>Create a session and manage your class.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button variant="outline" className="w-full border-indigo-600 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 font-semibold">
+                    Open Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        </AnimatedSection>
       </main>
 
-      {/* About/Company Section */}
-      <section id="about" className="w-full max-w-3xl mx-auto mt-16 bg-white/90 rounded-2xl shadow-lg p-8 border border-blue-100">
-        <div className="flex items-center gap-4 mb-4">
-          <span className="text-3xl">🏢</span>
-          <h2 className="text-2xl font-bold text-blue-700">MUA Global Tech</h2>
-        </div>
-        <p className="text-lg font-semibold mb-2">Empowering Africa Through Innovation</p>
-        <div className="flex flex-wrap gap-6 text-gray-600 text-sm mb-4">
-          <span>📍 <b>Kano State, Nigeria</b></span>
-          <span>👤 <b>Founder: Muhammad Usman Abdullahi</b></span>
-        </div>
-        <hr className="my-4" />
-        <div className="mb-6">
-          <h3 className="text-xl font-bold text-blue-600 mb-2 flex items-center gap-2">🌍 Vision</h3>
-          <p className="text-gray-700">To become Africa's leading force in software development, AI innovation, and digital transformation by the year 2030.</p>
-        </div>
-        <div className="mb-6">
-          <h3 className="text-xl font-bold text-blue-600 mb-2 flex items-center gap-2">🎯 Missions</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-1">
-            <li>Build powerful, user-friendly software for education, business, and daily life.</li>
-            <li>Teach tech in Hausa and English to empower the next generation.</li>
-            <li>Create world-class platforms like mini websites, smart POS agents, and AI content tools.</li>
-            <li>Tackle real Nigerian problems with smart, affordable tech.</li>
-            <li>Design tools that support African startups and small businesses.</li>
-            <li>Push the limits of innovation by exploring advanced technologies like AI, Web3, and secure systems.</li>
-            <li>Research and design defensive technologies in line with national regulations.</li>
-          </ul>
-        </div>
-        <div>
-          <h3 className="text-xl font-bold text-blue-600 mb-2 flex items-center gap-2">💼 Focus Areas</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-1">
-            <li>Web & Mobile App Development</li>
-            <li>AI-powered Tools & Education Platforms</li>
-            <li>Custom Business Solutions for Nigeria & Africa</li>
-            <li>Localized Tech (Hausa/Multilingual Interfaces)</li>
-            <li>Software-as-a-Service (SaaS)</li>
-            <li>Digital Education & E-learning</li>
-            <li>Innovation Labs and Hackathon Participation</li>
-          </ul>
-        </div>
-      </section>
-
-      {/* Call-to-Action Banner */}
-      <section className="w-full bg-blue-700 py-10 mt-16 flex flex-col items-center justify-center text-center text-white">
-        <h2 className="text-2xl md:text-3xl font-bold mb-2">Ready to Empower Your Learning or Teaching?</h2>
-        <p className="mb-6 text-lg">Join MUA Global Tech today and be part of Africa's digital transformation.</p>
-        <div className="flex flex-col md:flex-row gap-4 justify-center">
-          <Button className="bg-white text-blue-700 font-bold px-8 py-3 rounded-lg shadow hover:bg-blue-50 transition" onClick={() => setSelectedRole('student')}>
-            Get Started as Student
-          </Button>
-          <Button className="bg-blue-600 text-white font-bold px-8 py-3 rounded-lg shadow hover:bg-blue-800 transition" onClick={() => setSelectedRole('teacher')}>
-            Get Started as Teacher
-          </Button>
-        </div>
-      </section>
-
       {/* Testimonials Section */}
-      <section className="w-full max-w-4xl mx-auto mt-16 px-4">
-        <h2 className="text-2xl font-bold text-blue-700 mb-6 text-center">What Our Users Say</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center">
-            <span className="text-4xl mb-2">🌟</span>
-            <p className="text-gray-700 italic mb-2">"This platform made coding so much easier to learn. I love the live feedback!"</p>
-            <span className="text-blue-700 font-semibold">Aisha, Student</span>
+      <section id="testimonials" ref={sectionRefs.testimonials} className="w-full bg-white py-20 px-4">
+        <AnimatedSection>
+          <div className="max-w-5xl mx-auto text-center">
+            <h2 className="text-4xl font-bold mb-4">Loved by Educators & Students</h2>
+            <p className="text-gray-600 mb-12">Here's what people are saying about Vava Classroom.</p>
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full"
+            >
+              <CarouselContent>
+                {testimonials.map((testimonial, index) => (
+                  <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                    <div className="p-1">
+                      <Card className={`bg-slate-50 border-l-4 ${testimonial.borderColor} p-6 text-left shadow-lg h-full flex flex-col`}>
+                        <CardContent className="p-0 flex-grow">
+                          <p className="text-gray-700 italic">"{testimonial.quote}"</p>
+                        </CardContent>
+                        <footer className="mt-4">
+                          <div className={`font-bold ${testimonial.textColor}`}>{testimonial.name}</div>
+                          <div className="text-sm text-gray-500">{testimonial.role}</div>
+                        </footer>
+                      </Card>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:flex" />
+              <CarouselNext className="hidden md:flex" />
+            </Carousel>
           </div>
-          <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center">
-            <span className="text-4xl mb-2">🌟</span>
-            <p className="text-gray-700 italic mb-2">"Managing my class and sharing assignments is a breeze. Highly recommended!"</p>
-            <span className="text-blue-700 font-semibold">Mr. Bello, Teacher</span>
-          </div>
-          <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center">
-            <span className="text-4xl mb-2">🌟</span>
-            <p className="text-gray-700 italic mb-2">"The support team is fantastic and the tools are so easy to use."</p>
-            <span className="text-blue-700 font-semibold">Ngozi, Parent</span>
-          </div>
-        </div>
+        </AnimatedSection>
       </section>
 
       {/* FAQ Section */}
-      <section className="w-full max-w-3xl mx-auto mt-16 px-4" id="faq">
-        <h2 className="text-2xl font-bold text-blue-700 mb-6 text-center">Frequently Asked Questions</h2>
-        <div className="space-y-4">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold text-blue-600 mb-1">Is MUA Global Tech free to use?</h3>
-            <p className="text-gray-700">Yes! Students and teachers can get started for free. Premium features may be available in the future.</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold text-blue-600 mb-1">Can I use the platform on my phone?</h3>
-            <p className="text-gray-700">Absolutely. The platform is fully responsive and works on all devices.</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold text-blue-600 mb-1">How do I get support?</h3>
-            <p className="text-gray-700">You can contact our support team via the contact section or email us at <a href="mailto:support@muaglobaltech.com" className="text-blue-600 underline">support@muaglobaltech.com</a>.</p>
-          </div>
-        </div>
+      <section id="faq" ref={sectionRefs.faq} className="w-full max-w-3xl mx-auto py-16 px-4">
+        <AnimatedSection>
+          <h2 className="text-4xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="item-1">
+              <AccordionTrigger>Is Vava Classroom free?</AccordionTrigger>
+              <AccordionContent>
+                Yes! The core features for students and teachers are completely free. We plan to introduce premium features for institutions in the future.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-2">
+              <AccordionTrigger>What languages does the code editor support?</AccordionTrigger>
+              <AccordionContent>
+                The editor supports a wide range of languages including JavaScript, Python, Java, C++, and more, with syntax highlighting and autocompletion.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-3">
+              <AccordionTrigger>Can I use this on mobile?</AccordionTrigger>
+              <AccordionContent>
+                Absolutely. The platform is fully responsive and designed to work seamlessly across desktops, tablets, and mobile devices.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </AnimatedSection>
       </section>
 
-      {/* Newsletter Signup */}
-      <section className="w-full max-w-2xl mx-auto mt-16 px-4">
-        <div className="bg-white rounded-xl shadow p-8 flex flex-col items-center">
-          <h2 className="text-xl font-bold text-blue-700 mb-2">Stay Updated</h2>
-          <p className="text-gray-600 mb-4">Subscribe to our newsletter for updates, tips, and resources.</p>
-          <form className="flex flex-col sm:flex-row gap-2 w-full max-w-md">
-            <input type="email" placeholder="Your email address" className="flex-1 px-4 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" required />
-            <Button className="bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800 transition">Subscribe</Button>
-          </form>
-        </div>
+      {/* CTA Section */}
+      <section className="w-full bg-indigo-600 py-20 mt-16 text-center text-white">
+        <AnimatedSection>
+          <h2 className="text-4xl font-bold mb-4">Ready to Revolutionize Your Classroom?</h2>
+          <p className="text-xl mb-8">Sign up today and experience the future of education.</p>
+          <Button size="lg" className="bg-white text-indigo-600 font-bold px-10 py-4 rounded-full shadow-xl hover:bg-gray-100 transition-transform transform hover:scale-105" onClick={() => handleRoleSelect('teacher')}>
+            Get Started for Free
+          </Button>
+        </AnimatedSection>
       </section>
 
-      {/* Modern Footer with Links */}
-      <footer className="w-full bg-blue-900 text-white text-sm py-8 mt-16">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 px-4">
-          <div className="flex items-center gap-2 mb-2 md:mb-0">
-            <Code className="h-6 w-6 text-blue-200" />
-            <span className="font-bold text-lg">Vava Classroom</span>
+      {/* Footer */}
+      <footer className="w-full bg-gray-800 text-white py-8">
+        <AnimatedSection>
+          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center px-4">
+            <div>
+              <h3 className="font-bold text-lg mb-2">Vava Classroom</h3>
+              <p className="text-sm text-gray-400">The future of collaborative learning.</p>
+            </div>
+            <div>
+              <h3 className="font-bold text-lg mb-2">Links</h3>
+              <ul className="text-sm">
+                <li><a href="#features" className="hover:text-indigo-400">Features</a></li>
+                <li><a href="#how-it-works" className="hover:text-indigo-400">How it Works</a></li>
+                <li><a href="#faq" className="hover:text-indigo-400">FAQ</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-bold text-lg mb-2">Connect</h3>
+              <div className="flex justify-center space-x-4">
+                <a href="#" className="hover:text-indigo-400"><Twitter /></a>
+                <a href="#" className="hover:text-indigo-400"><Github /></a>
+                <a href="#" className="hover:text-indigo-400"><Linkedin /></a>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-6">
-            <a href="#about" className="hover:underline">About</a>
-            <a href="#faq" className="hover:underline">FAQ</a>
-            <a href="mailto:support@muaglobaltech.com" className="hover:underline">Contact</a>
-            <a href="#" className="hover:underline">Privacy Policy</a>
+          <div className="text-center text-gray-500 text-sm mt-8">
+            © {new Date().getFullYear()} Vava Classroom. All rights reserved.
           </div>
-          <div className="text-blue-200">&copy; {new Date().getFullYear()} MUA Global Tech. All rights reserved.</div>
-        </div>
+        </AnimatedSection>
       </footer>
     </div>
+
+    <Dialog open={!!selectedRole} onOpenChange={(open) => !open && handleCloseDialog()}>
+      <DialogContent className="sm:max-w-[425px]">
+        {selectedRole === 'student' && <StudentAuth onBack={handleCloseDialog} />}
+        {selectedRole === 'teacher' && <TeacherAuth onBack={handleCloseDialog} />}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 

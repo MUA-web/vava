@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import MonacoEditorPlugin from 'vite-plugin-monaco-editor';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -14,10 +13,16 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' &&
     componentTagger(),
-    (MonacoEditorPlugin as any).default({
-      // You can specify languages and features here
-    })
   ].filter(Boolean),
+  optimizeDeps: {
+    include: [
+      'monaco-editor/esm/vs/language/json/json.worker',
+      'monaco-editor/esm/vs/language/css/css.worker',
+      'monaco-editor/esm/vs/language/html/html.worker',
+      'monaco-editor/esm/vs/language/typescript/ts.worker',
+      'monaco-editor/esm/vs/editor/editor.worker'
+    ],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
