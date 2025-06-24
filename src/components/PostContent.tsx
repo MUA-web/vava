@@ -20,25 +20,25 @@ interface PostContentProps {
     language: 'python' | 'javascript' | 'html' | 'css';
     description?: string;
   };
+  contentClassName?: string;
 }
 
-const PostContent = ({ content, voiceNote, video, code }: PostContentProps) => {
+const PostContent = ({ content, voiceNote, video, code, contentClassName }: PostContentProps) => {
   return (
     <div className="space-y-4">
       {/* Code Display */}
-      {code && (
+      {code && code.code && (
         <div className="space-y-3">
-          <div className="border rounded-lg overflow-hidden">
+          <div className={`border rounded-lg overflow-hidden ${contentClassName}`}>
             <CodeEditor
               value={code.code}
               onChange={() => {}} // Read-only
               disabled={true}
               language={code.language}
-              showToolbar={false}
             />
           </div>
           {code.description && (
-            <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg border">
               {code.description}
             </p>
           )}

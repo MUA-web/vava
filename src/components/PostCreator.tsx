@@ -15,6 +15,7 @@ import CodeEditor from '@/components/CodeEditor';
 import { getTeacherPosts, saveTeacherPost } from '@/utils/fileSystem';
 import { supabase } from '@/integrations/supabase/client';
 import VideoUpload from '@/components/VideoUpload';
+import { cn } from '@/lib/utils';
 
 interface VoiceNoteData {
   audioUrl: string;
@@ -375,8 +376,6 @@ const PostCreator = () => {
                       value={formData.code?.code || ''}
                       onChange={handleCodeChange}
                       language="python"
-                      showToolbar={true}
-                      placeholder="Write your Python code example here..."
                     />
                   </div>
                   
@@ -399,16 +398,14 @@ const PostCreator = () => {
               )}
 
               {/* Rich Text Content (for non-code posts or additional content) */}
-              {formData.type !== 'code' && (
-                <div className="space-y-2">
-                  <Label htmlFor="content">Content</Label>
-                  <RichTextEditor
-                    value={formData.content}
-                    onChange={(content) => setFormData(prev => ({ ...prev, content }))}
-                    placeholder="Write your post content here..."
-                  />
-                </div>
-              )}
+              <div className={cn("space-y-2", formData.type === 'code' && 'hidden')}>
+                <Label htmlFor="content">Content</Label>
+                <RichTextEditor
+                  value={formData.content}
+                  onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+                  placeholder="Write your post content here..."
+                />
+              </div>
 
               {/* Video Upload Section */}
               <div className="space-y-3">
