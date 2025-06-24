@@ -370,7 +370,7 @@ const PostCreator = () => {
                     )}
                   </div>
                   
-                  <div className="border rounded-lg overflow-hidden">
+                  <div className="border rounded-lg overflow-hidden h-[400px]">
                     <CodeEditor
                       value={formData.code?.code || ''}
                       onChange={handleCodeChange}
